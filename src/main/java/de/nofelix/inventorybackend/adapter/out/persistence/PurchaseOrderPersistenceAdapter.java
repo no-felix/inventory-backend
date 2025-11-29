@@ -122,6 +122,7 @@ public class PurchaseOrderPersistenceAdapter implements PurchaseOrderRepositoryP
                 .status(order.getStatus())
                 .createdAt(order.getCreatedAt())
                 .receivedAt(order.getReceivedAt())
+                .version(order.getVersion())
                 .build();
     }
 
@@ -132,6 +133,7 @@ public class PurchaseOrderPersistenceAdapter implements PurchaseOrderRepositoryP
                 .status(entity.getStatus())
                 .createdAt(entity.getCreatedAt())
                 .receivedAt(entity.getReceivedAt())
+                .version(entity.getVersion())
                 .lines(new ArrayList<>())
                 .build();
     }

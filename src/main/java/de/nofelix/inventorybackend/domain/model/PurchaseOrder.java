@@ -36,6 +36,7 @@ public class PurchaseOrder {
     
     private Instant createdAt;
     private Instant receivedAt;
+    private Long version;
 
     // ========================================
     // Business Methods
