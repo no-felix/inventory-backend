@@ -63,6 +63,11 @@ public class UserPersistenceAdapter implements UserRepositoryPort {
         return repository.existsByEmail(email);
     }
 
+    @Override
+    public Mono<Boolean> existsAdminUser() {
+        return repository.existsByRoleAndEnabledTrue(User.Role.ADMIN.name());
+    }
+
     // ========================================
     // Mapping Methods
     // ========================================

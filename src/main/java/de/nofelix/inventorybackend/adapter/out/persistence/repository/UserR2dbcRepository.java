@@ -42,4 +42,12 @@ public interface UserR2dbcRepository extends ReactiveCrudRepository<UserEntity, 
      * @return true if exists
      */
     Mono<Boolean> existsByEmail(String email);
+
+    /**
+     * Checks if any admin user exists.
+     *
+     * @param role the admin role
+     * @return true if at least one admin exists
+     */
+    Mono<Boolean> existsByRoleAndEnabledTrue(String role);
 }
