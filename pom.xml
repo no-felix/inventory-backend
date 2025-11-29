@@ -299,6 +299,17 @@
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>0.8.12</version>
+                <configuration>
+                    <excludes>
+                        <!-- Exclude Lombok-generated code -->
+                        <exclude>**/*$Builder.class</exclude>
+                        <exclude>**/*$Builder$*.class</exclude>
+                        <!-- Exclude OpenAPI generated code -->
+                        <exclude>de/nofelix/inventorybackend/adapter/in/web/api/**</exclude>
+                        <exclude>de/nofelix/inventorybackend/adapter/in/web/model/**</exclude>
+                        <exclude>de/nofelix/inventorybackend/adapter/in/web/ApiUtil.class</exclude>
+                    </excludes>
+                </configuration>
                 <executions>
                     <execution>
                         <id>prepare-agent</id>
