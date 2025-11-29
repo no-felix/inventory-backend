@@ -112,6 +112,12 @@ public class StockMovementPersistenceAdapter implements StockMovementRepositoryP
                 .map(this::toDomain);
     }
 
+    @Override
+    public Mono<StockMovement> findLatestByProductId(Long productId) {
+        return repository.findTopByProductIdOrderByCreatedAtDesc(productId)
+                .map(this::toDomain);
+    }
+
     // ========================================
     // Mapping Methods
     // ========================================

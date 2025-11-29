@@ -94,4 +94,12 @@ public interface StockMovementRepositoryPort {
      * @return a Flux of stock movements
      */
     Flux<StockMovement> findByRelatedEntity(String relatedEntityType, Long relatedEntityId);
+
+    /**
+     * Finds the most recent stock movement for a product.
+     *
+     * @param productId the product ID
+     * @return the most recent movement, or empty if none
+     */
+    Mono<StockMovement> findLatestByProductId(Long productId);
 }

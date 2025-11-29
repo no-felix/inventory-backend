@@ -5,11 +5,11 @@ import de.nofelix.inventorybackend.domain.model.StockMovement;
 import de.nofelix.inventorybackend.domain.model.StockMovementReason;
 import de.nofelix.inventorybackend.domain.port.out.ProductRepositoryPort;
 import de.nofelix.inventorybackend.domain.port.out.StockMovementRepositoryPort;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Flux;
@@ -29,14 +29,20 @@ import static org.mockito.Mockito.when;
 @DisplayName("MetricsService")
 class MetricsServiceTest {
 
+    private static final int LOW_STOCK_THRESHOLD = 10;
+
     @Mock
     private ProductRepositoryPort productRepository;
 
     @Mock
     private StockMovementRepositoryPort stockMovementRepository;
 
-    @InjectMocks
     private MetricsService metricsService;
+
+    @BeforeEach
+    void setUp() {
+        metricsService = new MetricsService(LOW_STOCK_THRESHOLD, productRepository, stockMovementRepository);
+    }
 
     @Nested
     @DisplayName("getInventorySummary")

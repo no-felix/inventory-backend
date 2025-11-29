@@ -6,6 +6,7 @@ import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.time.Instant;
 
@@ -72,4 +73,12 @@ public interface StockMovementR2dbcRepository extends R2dbcRepository<StockMovem
             String reason, 
             Instant from, 
             Instant to);
+
+    /**
+     * Finds the most recent stock movement for a product.
+     *
+     * @param productId the product ID
+     * @return the most recent movement, or empty if none
+     */
+    Mono<StockMovementEntity> findTopByProductIdOrderByCreatedAtDesc(Long productId);
 }

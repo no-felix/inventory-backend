@@ -1,11 +1,17 @@
 package de.nofelix.inventorybackend.application.mapper;
 
 import de.nofelix.inventorybackend.adapter.in.web.model.InventorySummaryResponse;
+import de.nofelix.inventorybackend.adapter.in.web.model.LowStockAlertResponse;
 import de.nofelix.inventorybackend.adapter.in.web.model.ReceiptsTimeSeriesResponse;
+import de.nofelix.inventorybackend.adapter.in.web.model.SlowMovingItemResponse;
 import de.nofelix.inventorybackend.adapter.in.web.model.StockLevelResponse;
+import de.nofelix.inventorybackend.adapter.in.web.model.ValuationByPriceRangeResponse;
 import de.nofelix.inventorybackend.domain.port.in.GetMetricsUseCase.InventorySummary;
+import de.nofelix.inventorybackend.domain.port.in.GetMetricsUseCase.LowStockAlert;
 import de.nofelix.inventorybackend.domain.port.in.GetMetricsUseCase.ReceiptsTimeSeries;
+import de.nofelix.inventorybackend.domain.port.in.GetMetricsUseCase.SlowMovingItem;
 import de.nofelix.inventorybackend.domain.port.in.GetMetricsUseCase.StockLevel;
+import de.nofelix.inventorybackend.domain.port.in.GetMetricsUseCase.ValuationByPriceRange;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -34,6 +40,12 @@ public interface MetricsMapper {
     @Mapping(target = "totalQuantity", source = "totalQuantity")
     @Mapping(target = "orderCount", source = "orderCount")
     ReceiptsTimeSeriesResponse toResponse(ReceiptsTimeSeries timeSeries);
+
+    LowStockAlertResponse toResponse(LowStockAlert alert);
+
+    SlowMovingItemResponse toResponse(SlowMovingItem item);
+
+    ValuationByPriceRangeResponse toResponse(ValuationByPriceRange valuation);
 
     // Helper methods for type conversion
     default Double toDouble(BigDecimal value) {
