@@ -14,6 +14,7 @@ import de.nofelix.inventorybackend.domain.port.in.AuthenticateUserUseCase.AuthCo
 import de.nofelix.inventorybackend.domain.port.in.AuthenticateUserUseCase.AuthResult;
 import de.nofelix.inventorybackend.domain.port.in.RegisterUserUseCase;
 import de.nofelix.inventorybackend.domain.port.in.RegisterUserUseCase.RegisterCommand;
+import de.nofelix.inventorybackend.domain.port.in.SetupAdminUseCase;
 import de.nofelix.inventorybackend.infrastructure.exception.GlobalExceptionHandler;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -53,6 +54,9 @@ class AuthControllerTest {
     private AuthenticateUserUseCase authenticateUserUseCase;
 
     @Mock
+    private SetupAdminUseCase setupAdminUseCase;
+
+    @Mock
     private AuthMapper authMapper;
 
     @BeforeEach
@@ -60,6 +64,7 @@ class AuthControllerTest {
         AuthController controller = new AuthController(
                 registerUserUseCase,
                 authenticateUserUseCase,
+                setupAdminUseCase,
                 authMapper
         );
 

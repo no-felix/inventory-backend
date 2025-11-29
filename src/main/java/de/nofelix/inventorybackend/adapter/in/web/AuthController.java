@@ -9,13 +9,19 @@ import de.nofelix.inventorybackend.adapter.in.web.model.UserResponse;
 import de.nofelix.inventorybackend.application.mapper.AuthMapper;
 import de.nofelix.inventorybackend.domain.port.in.AuthenticateUserUseCase;
 import de.nofelix.inventorybackend.domain.port.in.RegisterUserUseCase;
+import de.nofelix.inventorybackend.domain.port.in.SetupAdminUseCase;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
+
+import java.util.Map;
 
 /**
  * REST controller implementing the AuthenticationApi interface.
@@ -29,6 +35,7 @@ public class AuthController implements AuthenticationApi {
 
     private final RegisterUserUseCase registerUserUseCase;
     private final AuthenticateUserUseCase authenticateUserUseCase;
+    private final SetupAdminUseCase setupAdminUseCase;
     private final AuthMapper authMapper;
 
     @Override
@@ -68,5 +75,32 @@ public class AuthController implements AuthenticationApi {
                 .flatMap(authenticateUserUseCase::refreshToken)
                 .map(authMapper::toAuthResponse)
                 .map(ResponseEntity::ok);
+    }
+
+    /**
+     * Check if initial admin setup is required.
+     * Returns true if no admin account exists yet.
+     */
+    @GetMapping("/api/v1/auth/setup/status")
+    public Mono<ResponseEntity<Map<String, Boolean>>> getSetupStatus() {
+        log.debug("Checking if admin setup is required");
+
+        return setupAdminUseCase.isSetupRequired()
+                .map(required -> ResponseEntity.ok(Map.of("setupRequired", required)));
+    }
+
+    /**
+     * Create the initial admin account.
+     * Only works if no admin account exists yet.
+     */
+    @PostMapping("/api/v1/auth/setup")
+    public Mono<ResponseEntity<UserResponse>> setupAdmin(@RequestBody Mono<RegisterRequest> request) {
+        log.info("Received initial admin setup request");
+
+        return request
+                .map(authMapper::toSetupAdminCommand)
+                .flatMap(setupAdminUseCase::setupAdmin)
+                .map(authMapper::toUserResponse)
+                .map(response -> ResponseEntity.status(HttpStatus.CREATED).body(response));
     }
 }
