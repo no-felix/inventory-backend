@@ -3,11 +3,14 @@ package de.nofelix.inventorybackend.application.usecase;
 import de.nofelix.inventorybackend.domain.exception.DuplicateSkuException;
 import de.nofelix.inventorybackend.domain.exception.ProductNotFoundException;
 import de.nofelix.inventorybackend.domain.model.Product;
+import de.nofelix.inventorybackend.domain.model.StockMovement;
+import de.nofelix.inventorybackend.domain.model.StockMovementReason;
 import de.nofelix.inventorybackend.domain.port.in.CreateProductUseCase;
 import de.nofelix.inventorybackend.domain.port.in.DeleteProductUseCase;
 import de.nofelix.inventorybackend.domain.port.in.GetProductUseCase;
 import de.nofelix.inventorybackend.domain.port.in.UpdateProductUseCase;
 import de.nofelix.inventorybackend.domain.port.out.ProductRepositoryPort;
+import de.nofelix.inventorybackend.domain.port.out.StockMovementRepositoryPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -15,9 +18,11 @@ import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.time.Instant;
+
 /**
  * Service implementing all product-related use cases.
- * 
+ *
  * <p>This service orchestrates the business logic for product operations,
  * delegating persistence to the repository port.</p>
  */
@@ -25,13 +30,14 @@ import reactor.core.publisher.Mono;
 @Service
 @Transactional
 @RequiredArgsConstructor
-public class ProductService implements 
-        GetProductUseCase, 
-        CreateProductUseCase, 
-        UpdateProductUseCase, 
+public class ProductService implements
+        GetProductUseCase,
+        CreateProductUseCase,
+        UpdateProductUseCase,
         DeleteProductUseCase {
 
     private final ProductRepositoryPort productRepository;
+    private final StockMovementRepositoryPort stockMovementRepository;
 
     // ========================================
     // GetProductUseCase Implementation
@@ -94,7 +100,7 @@ public class ProductService implements
     @Override
     public Mono<Product> updateProduct(Long id, UpdateProductCommand command) {
         log.info("Updating product with ID: {}", id);
-        
+
         return productRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ProductNotFoundException(id)))
                 .flatMap(existingProduct -> {
@@ -111,6 +117,8 @@ public class ProductService implements
                     return Mono.just(existingProduct);
                 })
                 .flatMap(existingProduct -> {
+                    int quantityChange = command.quantityOnHand() - existingProduct.getQuantityOnHand();
+
                     Product updatedProduct = Product.builder()
                             .id(existingProduct.getId())
                             .sku(command.sku())
@@ -121,8 +129,27 @@ public class ProductService implements
                             .createdAt(existingProduct.getCreatedAt())
                             .version(existingProduct.getVersion())
                             .build();
-                    
-                    return productRepository.save(updatedProduct);
+
+                    return productRepository.save(updatedProduct)
+                            .flatMap(savedProduct -> {
+                                // Create adjustment movement if quantity changed
+                                if (quantityChange != 0) {
+                                    log.info("Creating auto-adjustment movement for product {} with change {}",
+                                            savedProduct.getId(), quantityChange);
+
+                                    StockMovement movement = StockMovement.builder()
+                                            .productId(savedProduct.getId())
+                                            .change(quantityChange)
+                                            .reason(StockMovementReason.ADJUSTMENT)
+                                            .performedBy("system")
+                                            .createdAt(Instant.now())
+                                            .build();
+
+                                    return stockMovementRepository.save(movement)
+                                            .thenReturn(savedProduct);
+                                }
+                                return Mono.just(savedProduct);
+                            });
                 })
                 .doOnSuccess(p -> log.info("Updated product with ID: {}", p.getId()));
     }
