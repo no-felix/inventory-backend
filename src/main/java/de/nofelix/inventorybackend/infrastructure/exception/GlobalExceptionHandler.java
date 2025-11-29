@@ -2,6 +2,8 @@ package de.nofelix.inventorybackend.infrastructure.exception;
 
 import de.nofelix.inventorybackend.domain.exception.DuplicateSkuException;
 import de.nofelix.inventorybackend.domain.exception.ProductNotFoundException;
+import de.nofelix.inventorybackend.domain.exception.PurchaseOrderNotFoundException;
+import de.nofelix.inventorybackend.domain.exception.PurchaseOrderNotReceivableException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -38,6 +40,44 @@ public class GlobalExceptionHandler {
         
         if (ex.getProductId() != null) {
             problemDetail.setProperty("productId", ex.getProductId());
+        }
+        
+        return Mono.just(problemDetail);
+    }
+
+    @ExceptionHandler(PurchaseOrderNotFoundException.class)
+    public Mono<ProblemDetail> handlePurchaseOrderNotFound(PurchaseOrderNotFoundException ex) {
+        log.warn("Purchase order not found: {}", ex.getMessage());
+        
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+                HttpStatus.NOT_FOUND, 
+                ex.getMessage()
+        );
+        problemDetail.setType(URI.create(ERROR_TYPE_BASE + "purchase-order-not-found"));
+        problemDetail.setTitle("Purchase Order Not Found");
+        problemDetail.setProperty("timestamp", Instant.now());
+        
+        if (ex.getPurchaseOrderId() != null) {
+            problemDetail.setProperty("purchaseOrderId", ex.getPurchaseOrderId());
+        }
+        
+        return Mono.just(problemDetail);
+    }
+
+    @ExceptionHandler(PurchaseOrderNotReceivableException.class)
+    public Mono<ProblemDetail> handlePurchaseOrderNotReceivable(PurchaseOrderNotReceivableException ex) {
+        log.warn("Purchase order not receivable: {}", ex.getMessage());
+        
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+                HttpStatus.CONFLICT, 
+                ex.getMessage()
+        );
+        problemDetail.setType(URI.create(ERROR_TYPE_BASE + "purchase-order-not-receivable"));
+        problemDetail.setTitle("Purchase Order Not Receivable");
+        problemDetail.setProperty("timestamp", Instant.now());
+        
+        if (ex.getPurchaseOrderId() != null) {
+            problemDetail.setProperty("purchaseOrderId", ex.getPurchaseOrderId());
         }
         
         return Mono.just(problemDetail);
