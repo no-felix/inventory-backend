@@ -1,0 +1,43 @@
+# Test profile configuration
+spring:
+  main:
+    allow-bean-definition-overriding: true
+  
+  # R2DBC configuration for tests - uses Testcontainers
+  r2dbc:
+    url: r2dbc:tc:postgresql:///inventory_test?TC_IMAGE_TAG=16-alpine
+    username: test
+    password: test
+    pool:
+      enabled: true
+      initial-size: 2
+      max-size: 5
+
+  # Flyway configuration for tests
+  flyway:
+    enabled: true
+    url: jdbc:tc:postgresql:16-alpine:///inventory_test
+    user: test
+    password: test
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
+  # JPA is disabled for reactive stack
+  jpa:
+    hibernate:
+      ddl-auto: none
+
+# Actuator configuration for tests
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+# Logging configuration
+logging:
+  level:
+    root: WARN
+    de.nofelix.inventorybackend: DEBUG
+    org.springframework.r2dbc: DEBUG
+    org.testcontainers: INFO
