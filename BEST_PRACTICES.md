@@ -121,30 +121,26 @@ package de.nofelix.inventorybackend.domain.model;
 ### Code Organization
 
 ```java
+@Slf4j  // Use Lombok for logging
+@RequiredArgsConstructor  // Use Lombok for constructor injection
 public class ExampleClass {
-    // 1. Static fields (constants first)
-    private static final Logger log = LoggerFactory.getLogger(ExampleClass.class);
+    // 1. Static fields (constants)
+    private static final String DEFAULT_VALUE = "default";
     
-    // 2. Instance fields
+    // 2. Instance fields (final fields for dependencies)
     private final DependencyA dependencyA;
     private final DependencyB dependencyB;
     
-    // 3. Constructors
-    public ExampleClass(DependencyA dependencyA, DependencyB dependencyB) {
-        this.dependencyA = dependencyA;
-        this.dependencyB = dependencyB;
-    }
-    
-    // 4. Public methods
+    // 3. Public methods
     public void publicMethod() { }
     
-    // 5. Package-private methods
+    // 4. Package-private methods
     void packagePrivateMethod() { }
     
-    // 6. Protected methods
+    // 5. Protected methods
     protected void protectedMethod() { }
     
-    // 7. Private methods
+    // 6. Private methods
     private void privateMethod() { }
 }
 ```
@@ -454,14 +450,16 @@ public interface ProductRepositoryPort {
 
 ### RESTful Conventions
 
+All API paths are versioned with `/api/v1` prefix:
+
 | Operation | HTTP Method | Path | Response |
 |-----------|-------------|------|----------|
-| List | GET | /api/products | 200 OK |
-| Get one | GET | /api/products/{id} | 200 OK, 404 Not Found |
-| Create | POST | /api/products | 201 Created |
-| Update | PUT | /api/products/{id} | 200 OK |
-| Partial Update | PATCH | /api/products/{id} | 200 OK |
-| Delete | DELETE | /api/products/{id} | 204 No Content |
+| List | GET | /api/v1/products | 200 OK |
+| Get one | GET | /api/v1/products/{id} | 200 OK, 404 Not Found |
+| Create | POST | /api/v1/products | 201 Created |
+| Update | PUT | /api/v1/products/{id} | 200 OK |
+| Partial Update | PATCH | /api/v1/products/{id} | 200 OK |
+| Delete | DELETE | /api/v1/products/{id} | 204 No Content |
 
 ### Response Format
 
@@ -481,11 +479,13 @@ Use consistent response structures:
 
 ```json
 {
-  "type": "https://api.inventory.com/errors/not-found",
+  "type": "https://api.inventory.example.com/errors/product-not-found",
   "title": "Product Not Found",
   "status": 404,
   "detail": "Product with ID 123 was not found",
-  "instance": "/api/products/123"
+  "instance": "/api/v1/products/123",
+  "timestamp": "2025-11-29T10:30:00Z",
+  "productId": 123
 }
 ```
 
