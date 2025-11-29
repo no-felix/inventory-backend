@@ -173,6 +173,21 @@ public class GlobalExceptionHandler {
         return Mono.just(problemDetail);
     }
 
+    @ExceptionHandler(IllegalStateException.class)
+    public Mono<ProblemDetail> handleIllegalState(IllegalStateException ex) {
+        log.warn("Illegal state: {}", ex.getMessage());
+        
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+                HttpStatus.CONFLICT, 
+                ex.getMessage()
+        );
+        problemDetail.setType(URI.create(ERROR_TYPE_BASE + "conflict"));
+        problemDetail.setTitle("Conflict");
+        problemDetail.setProperty("timestamp", Instant.now());
+        
+        return Mono.just(problemDetail);
+    }
+
     @ExceptionHandler(Exception.class)
     public Mono<ProblemDetail> handleGenericException(Exception ex) {
         log.error("Unexpected error: {}", ex.getMessage(), ex);
