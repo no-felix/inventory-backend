@@ -34,7 +34,8 @@
         <swagger-annotations.version>2.2.41</swagger-annotations.version>
         <jackson-databind-nullable.version>0.2.8</jackson-databind-nullable.version>
         <jakarta-validation.version>3.1.1</jakarta-validation.version>
-        <testcontainers.version>1.20.4</testcontainers.version>
+        <testcontainers.version>2.0.2</testcontainers.version>
+        <testcontainers-postgresql.version>1.21.3</testcontainers-postgresql.version>
     </properties>
     
     <dependencyManagement>
@@ -206,17 +207,14 @@
         </dependency>
         <dependency>
             <groupId>org.testcontainers</groupId>
-            <artifactId>junit-jupiter</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.testcontainers</groupId>
             <artifactId>postgresql</artifactId>
+            <version>${testcontainers-postgresql.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>r2dbc</artifactId>
+            <version>${testcontainers-postgresql.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
