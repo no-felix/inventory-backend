@@ -429,4 +429,206 @@ class PurchaseOrderControllerTest {
                     .expectStatus().isEqualTo(409);
         }
     }
+
+    @Nested
+    @DisplayName("Validation Error Handling")
+    class ValidationTests {
+
+        @Test
+        @DisplayName("should return 400 when supplier name is empty")
+        void createPurchaseOrder_withEmptySupplierName_returns400() {
+            // given
+            PurchaseOrderRequest invalidRequest = new PurchaseOrderRequest()
+                    .supplierName("")
+                    .lines(List.of(new PurchaseOrderLineRequest()
+                            .productId(1L)
+                            .quantity(10)
+                            .unitPrice(25.0)))
+                    .received(false);
+
+            // when/then
+            webTestClient.post()
+                    .uri("/api/v1/purchase-orders")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(invalidRequest)
+                    .exchange()
+                    .expectStatus().isBadRequest()
+                    .expectBody()
+                    .jsonPath("$.type").isEqualTo("https://api.inventory.example.com/errors/validation-error")
+                    .jsonPath("$.title").isEqualTo("Validation Error")
+                    .jsonPath("$.status").isEqualTo(400)
+                    .jsonPath("$.errors").isNotEmpty()
+                    .jsonPath("$.errors[?(@.field == 'supplierName')]").exists();
+        }
+
+        @Test
+        @DisplayName("should return 400 when supplier name exceeds max length")
+        void createPurchaseOrder_withTooLongSupplierName_returns400() {
+            // given
+            String longSupplierName = "A".repeat(256);
+            PurchaseOrderRequest invalidRequest = new PurchaseOrderRequest()
+                    .supplierName(longSupplierName)
+                    .lines(List.of(new PurchaseOrderLineRequest()
+                            .productId(1L)
+                            .quantity(10)
+                            .unitPrice(25.0)))
+                    .received(false);
+
+            // when/then
+            webTestClient.post()
+                    .uri("/api/v1/purchase-orders")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(invalidRequest)
+                    .exchange()
+                    .expectStatus().isBadRequest()
+                    .expectBody()
+                    .jsonPath("$.type").isEqualTo("https://api.inventory.example.com/errors/validation-error")
+                    .jsonPath("$.status").isEqualTo(400)
+                    .jsonPath("$.errors[?(@.field == 'supplierName')]").exists();
+        }
+
+        @Test
+        @DisplayName("should return 400 when lines list is empty")
+        void createPurchaseOrder_withEmptyLines_returns400() {
+            // given
+            PurchaseOrderRequest invalidRequest = new PurchaseOrderRequest()
+                    .supplierName("Valid Supplier")
+                    .lines(List.of())
+                    .received(false);
+
+            // when/then
+            webTestClient.post()
+                    .uri("/api/v1/purchase-orders")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(invalidRequest)
+                    .exchange()
+                    .expectStatus().isBadRequest()
+                    .expectBody()
+                    .jsonPath("$.type").isEqualTo("https://api.inventory.example.com/errors/validation-error")
+                    .jsonPath("$.status").isEqualTo(400)
+                    .jsonPath("$.errors[?(@.field == 'lines')]").exists();
+        }
+
+        @Test
+        @DisplayName("should return 400 when line quantity is zero")
+        void createPurchaseOrder_withZeroQuantity_returns400() {
+            // given
+            PurchaseOrderRequest invalidRequest = new PurchaseOrderRequest()
+                    .supplierName("Valid Supplier")
+                    .lines(List.of(new PurchaseOrderLineRequest()
+                            .productId(1L)
+                            .quantity(0)
+                            .unitPrice(25.0)))
+                    .received(false);
+
+            // when/then
+            webTestClient.post()
+                    .uri("/api/v1/purchase-orders")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(invalidRequest)
+                    .exchange()
+                    .expectStatus().isBadRequest()
+                    .expectBody()
+                    .jsonPath("$.type").isEqualTo("https://api.inventory.example.com/errors/validation-error")
+                    .jsonPath("$.status").isEqualTo(400)
+                    .jsonPath("$.errors[?(@.field == 'lines[0].quantity')]").exists();
+        }
+
+        @Test
+        @DisplayName("should return 400 when line unit price is negative")
+        void createPurchaseOrder_withNegativeUnitPrice_returns400() {
+            // given
+            PurchaseOrderRequest invalidRequest = new PurchaseOrderRequest()
+                    .supplierName("Valid Supplier")
+                    .lines(List.of(new PurchaseOrderLineRequest()
+                            .productId(1L)
+                            .quantity(10)
+                            .unitPrice(-5.0)))
+                    .received(false);
+
+            // when/then
+            webTestClient.post()
+                    .uri("/api/v1/purchase-orders")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(invalidRequest)
+                    .exchange()
+                    .expectStatus().isBadRequest()
+                    .expectBody()
+                    .jsonPath("$.type").isEqualTo("https://api.inventory.example.com/errors/validation-error")
+                    .jsonPath("$.status").isEqualTo(400)
+                    .jsonPath("$.errors[?(@.field == 'lines[0].unitPrice')]").exists();
+        }
+
+        @Test
+        @DisplayName("should return 400 when multiple validation errors occur")
+        void createPurchaseOrder_withMultipleValidationErrors_returns400WithAllErrors() {
+            // given
+            PurchaseOrderRequest invalidRequest = new PurchaseOrderRequest()
+                    .supplierName("")
+                    .lines(List.of())
+                    .received(false);
+
+            // when/then
+            webTestClient.post()
+                    .uri("/api/v1/purchase-orders")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(invalidRequest)
+                    .exchange()
+                    .expectStatus().isBadRequest()
+                    .expectBody()
+                    .jsonPath("$.type").isEqualTo("https://api.inventory.example.com/errors/validation-error")
+                    .jsonPath("$.status").isEqualTo(400)
+                    .jsonPath("$.errors").isNotEmpty()
+                    .jsonPath("$.errors[?(@.field == 'supplierName')]").exists()
+                    .jsonPath("$.errors[?(@.field == 'lines')]").exists();
+        }
+
+        @Test
+        @DisplayName("should return 400 when supplier name is null")
+        void createPurchaseOrder_withNullSupplierName_returns400() {
+            // given - using raw JSON to send null supplierName
+            String invalidJson = """
+                    {
+                        "supplierName": null,
+                        "lines": [{"productId": 1, "quantity": 10, "unitPrice": 25.0}],
+                        "received": false
+                    }
+                    """;
+
+            // when/then
+            webTestClient.post()
+                    .uri("/api/v1/purchase-orders")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(invalidJson)
+                    .exchange()
+                    .expectStatus().isBadRequest()
+                    .expectBody()
+                    .jsonPath("$.type").isEqualTo("https://api.inventory.example.com/errors/validation-error")
+                    .jsonPath("$.errors[?(@.field == 'supplierName')]").exists();
+        }
+
+        @Test
+        @DisplayName("should return 400 when lines is null")
+        void createPurchaseOrder_withNullLines_returns400() {
+            // given - using raw JSON to send null lines
+            String invalidJson = """
+                    {
+                        "supplierName": "Valid Supplier",
+                        "lines": null,
+                        "received": false
+                    }
+                    """;
+
+            // when/then
+            webTestClient.post()
+                    .uri("/api/v1/purchase-orders")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(invalidJson)
+                    .exchange()
+                    .expectStatus().isBadRequest()
+                    .expectBody()
+                    .jsonPath("$.type").isEqualTo("https://api.inventory.example.com/errors/validation-error")
+                    .jsonPath("$.errors[?(@.field == 'lines')]").exists();
+        }
+    }
 }
