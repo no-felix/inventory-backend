@@ -1,9 +1,11 @@
 package de.nofelix.inventorybackend.infrastructure.exception;
 
+import de.nofelix.inventorybackend.domain.exception.AuthenticationException;
 import de.nofelix.inventorybackend.domain.exception.DuplicateSkuException;
 import de.nofelix.inventorybackend.domain.exception.ProductNotFoundException;
 import de.nofelix.inventorybackend.domain.exception.PurchaseOrderNotFoundException;
 import de.nofelix.inventorybackend.domain.exception.PurchaseOrderNotReceivableException;
+import de.nofelix.inventorybackend.domain.exception.UserAlreadyExistsException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -95,6 +97,38 @@ public class GlobalExceptionHandler {
         problemDetail.setTitle("Duplicate SKU");
         problemDetail.setProperty("timestamp", Instant.now());
         problemDetail.setProperty("sku", ex.getSku());
+        
+        return Mono.just(problemDetail);
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    public Mono<ProblemDetail> handleAuthentication(AuthenticationException ex) {
+        log.warn("Authentication failed: {}", ex.getMessage());
+        
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+                HttpStatus.UNAUTHORIZED, 
+                ex.getMessage()
+        );
+        problemDetail.setType(URI.create(ERROR_TYPE_BASE + "authentication-failed"));
+        problemDetail.setTitle("Authentication Failed");
+        problemDetail.setProperty("timestamp", Instant.now());
+        
+        return Mono.just(problemDetail);
+    }
+
+    @ExceptionHandler(UserAlreadyExistsException.class)
+    public Mono<ProblemDetail> handleUserAlreadyExists(UserAlreadyExistsException ex) {
+        log.warn("User already exists: {}", ex.getMessage());
+        
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+                HttpStatus.CONFLICT, 
+                ex.getMessage()
+        );
+        problemDetail.setType(URI.create(ERROR_TYPE_BASE + "user-already-exists"));
+        problemDetail.setTitle("User Already Exists");
+        problemDetail.setProperty("timestamp", Instant.now());
+        problemDetail.setProperty("field", ex.getField());
+        problemDetail.setProperty("value", ex.getValue());
         
         return Mono.just(problemDetail);
     }

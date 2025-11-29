@@ -125,6 +125,14 @@ inventory:
   default-page-size: 20
   max-page-size: 100
 
+# ============================================================
+# JWT Configuration
+# ============================================================
+jwt:
+  secret: ${JWT_SECRET:your-256-bit-secret-key-for-development-only-change-in-production-at-least-32-chars}
+  access-token-expiration: ${JWT_ACCESS_EXPIRATION:900}      # 15 minutes
+  refresh-token-expiration: ${JWT_REFRESH_EXPIRATION:604800} # 7 days
+
 ---
 # ============================================================
 # Development Profile

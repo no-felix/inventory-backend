@@ -16,6 +16,8 @@ servers:
     description: Local development server
 
 tags:
+  - name: Authentication
+    description: User authentication and registration endpoints
   - name: Products
     description: Product management endpoints
   - name: Purchase Orders
@@ -26,6 +28,88 @@ tags:
     description: Inventory metrics and reporting endpoints
 
 paths:
+  # ============================================================
+  # AUTHENTICATION
+  # ============================================================
+  /api/v1/auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: Register a new user
+      description: Create a new user account
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Authenticate user
+      description: Login with username and password to obtain JWT tokens
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/auth/refresh:
+    post:
+      tags:
+        - Authentication
+      summary: Refresh access token
+      description: Use a refresh token to obtain a new access token
+      operationId: refreshToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
   # ============================================================
   # PRODUCTS
   # ============================================================
@@ -439,6 +523,77 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+  /api/v1/metrics/low-stock-alerts:
+    get:
+      tags:
+        - Metrics
+      summary: Get low stock alerts
+      description: |
+        Retrieve a list of products that are below the configured
+        low stock threshold, sorted by severity (deficit).
+      operationId: getLowStockAlerts
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LowStockAlertResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/metrics/slow-moving-items:
+    get:
+      tags:
+        - Metrics
+      summary: Get slow-moving items
+      description: |
+        Retrieve a list of products with no stock movement in
+        the specified number of days.
+      operationId: getSlowMovingItems
+      parameters:
+        - name: days
+          in: query
+          description: Number of days to consider as slow-moving threshold
+          schema:
+            type: integer
+            default: 30
+            minimum: 1
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SlowMovingItemResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/metrics/valuation-by-price-range:
+    get:
+      tags:
+        - Metrics
+      summary: Get inventory valuation by price range
+      description: |
+        Retrieve inventory valuation broken down by product price ranges
+        to understand inventory distribution across different value tiers.
+      operationId: getValuationByPriceRange
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ValuationByPriceRangeResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
 # ============================================================
 # COMPONENTS
 # ============================================================
@@ -463,6 +618,108 @@ components:
         format: int64
 
   schemas:
+    # ----------------------------------------------------------
+    # Authentication Schemas
+    # ----------------------------------------------------------
+    RegisterRequest:
+      type: object
+      required:
+        - username
+        - email
+        - password
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 50
+          pattern: '^[a-zA-Z0-9_-]+$'
+          description: Unique username (alphanumeric, underscore, hyphen only)
+          example: john_doe
+        email:
+          type: string
+          format: email
+          maxLength: 255
+          description: Unique email address
+          example: john@example.com
+        password:
+          type: string
+          minLength: 8
+          maxLength: 100
+          description: Password (minimum 8 characters)
+          example: securePass123
+
+    LoginRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          description: Username
+          example: john_doe
+        password:
+          type: string
+          description: Password
+          example: securePass123
+
+    RefreshTokenRequest:
+      type: object
+      required:
+        - refreshToken
+      properties:
+        refreshToken:
+          type: string
+          description: The refresh token obtained from login
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: User ID
+          example: 1
+        username:
+          type: string
+          description: Username
+          example: john_doe
+        email:
+          type: string
+          description: Email address
+          example: john@example.com
+        role:
+          type: string
+          enum: [USER, ADMIN]
+          description: User role
+          example: USER
+        createdAt:
+          type: string
+          format: date-time
+          description: Account creation timestamp
+
+    AuthResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          description: JWT access token
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        refreshToken:
+          type: string
+          description: JWT refresh token
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        expiresIn:
+          type: integer
+          format: int64
+          description: Access token expiration time in seconds
+          example: 900
+        tokenType:
+          type: string
+          description: Token type
+          example: Bearer
+
     # ----------------------------------------------------------
     # Product Schemas
     # ----------------------------------------------------------
@@ -797,6 +1054,91 @@ components:
           description: Number of orders received on this date
           example: 5
 
+    LowStockAlertResponse:
+      type: object
+      properties:
+        productId:
+          type: integer
+          format: int64
+          description: Product ID
+          example: 1
+        sku:
+          type: string
+          description: Product SKU
+          example: SKU-001
+        name:
+          type: string
+          description: Product name
+          example: Widget
+        currentQuantity:
+          type: integer
+          description: Current quantity on hand
+          example: 5
+        threshold:
+          type: integer
+          description: Low stock threshold
+          example: 10
+        deficit:
+          type: integer
+          description: Units below threshold (threshold - currentQuantity)
+          example: 5
+
+    SlowMovingItemResponse:
+      type: object
+      properties:
+        productId:
+          type: integer
+          format: int64
+          description: Product ID
+          example: 1
+        sku:
+          type: string
+          description: Product SKU
+          example: SKU-002
+        name:
+          type: string
+          description: Product name
+          example: Old Gadget
+        quantityOnHand:
+          type: integer
+          description: Current quantity on hand
+          example: 50
+        totalValue:
+          type: number
+          format: double
+          description: Total value of stock
+          example: 2500.00
+        lastMovementDate:
+          type: string
+          format: date
+          description: Date of last stock movement
+          example: "2025-01-15"
+        daysSinceLastMovement:
+          type: integer
+          description: Days since last movement
+          example: 45
+
+    ValuationByPriceRangeResponse:
+      type: object
+      properties:
+        priceRange:
+          type: string
+          description: Price range label
+          example: "$10 - $50"
+        productCount:
+          type: integer
+          description: Number of products in this range
+          example: 25
+        totalQuantity:
+          type: integer
+          description: Total quantity in this range
+          example: 500
+        totalValue:
+          type: number
+          format: double
+          description: Total value of products in this range
+          example: 12500.00
+
     # ----------------------------------------------------------
     # Error Schemas
     # ----------------------------------------------------------
@@ -830,6 +1172,13 @@ components:
   responses:
     BadRequest:
       description: Invalid request
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+
+    Unauthorized:
+      description: Authentication required or failed
       content:
         application/problem+json:
           schema:

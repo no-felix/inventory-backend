@@ -3,6 +3,7 @@ package de.nofelix.inventorybackend.adapter.in.web;
 import de.nofelix.inventorybackend.TestcontainersConfiguration;
 import de.nofelix.inventorybackend.adapter.in.web.model.ProductRequest;
 import de.nofelix.inventorybackend.adapter.in.web.model.ProductResponse;
+import de.nofelix.inventorybackend.config.TestSecurityConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -27,7 +28,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
-@Import(TestcontainersConfiguration.class)
+@Import({TestcontainersConfiguration.class, TestSecurityConfig.class})
 @ActiveProfiles("test")
 @DisplayName("Product API Integration Tests")
 class ProductControllerIntegrationTest {
