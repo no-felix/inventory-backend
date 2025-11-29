@@ -123,6 +123,8 @@ All configuration can be overridden via environment variables. Here are the avai
 | `JWT_SECRET` | *(dev default)* | Secret key for signing tokens (min 32 chars) |
 | `JWT_ACCESS_EXPIRATION` | `900` | Access token lifetime in seconds (15 min) |
 | `JWT_REFRESH_EXPIRATION` | `604800` | Refresh token lifetime in seconds (7 days) |
+| **CORS** |||
+| `CORS_ALLOWED_ORIGINS` | `http://localhost:5173,http://localhost:3000` | Allowed frontend origins |
 | **Application** |||
 | `LOW_STOCK_THRESHOLD` | `10` | Quantity threshold for low stock alerts |
 
@@ -212,6 +214,33 @@ export JWT_SECRET=your-production-secret-at-least-32-characters
 
 ## 📡 API
 
+### Initial Admin Setup
+
+When starting with a fresh database, you need to create the first admin account:
+
+```bash
+# 1. Check if setup is needed
+curl http://localhost:8080/api/v1/auth/setup/status
+# Returns: {"setupRequired": true}
+
+# 2. Create the initial admin account (only works once!)
+curl -X POST http://localhost:8080/api/v1/auth/setup \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "admin",
+    "email": "admin@example.com",
+    "password": "your-secure-password"
+  }'
+
+# 3. Login with your admin account
+curl -X POST http://localhost:8080/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "admin", "password": "your-secure-password"}'
+```
+
+> **Note:** The setup endpoint is disabled after the first admin is created.
+> Regular users can register via `/api/v1/auth/register` but will have `USER` role (read-only).
+
 ### Authentication
 
 All endpoints except `/api/v1/auth/**` and `/actuator/**` require JWT authentication.
@@ -249,6 +278,9 @@ curl -X POST http://localhost:8080/api/v1/auth/refresh \
 
 | Method | Endpoint | Auth | Description |
 |--------|----------|:----:|-------------|
+| **Admin Setup** ||||
+| `GET` | `/api/v1/auth/setup/status` | ❌ | Check if admin setup is needed |
+| `POST` | `/api/v1/auth/setup` | ❌ | Create initial admin (once only) |
 | **Authentication** ||||
 | `POST` | `/api/v1/auth/register` | ❌ | Register new user |
 | `POST` | `/api/v1/auth/login` | ❌ | Login and get tokens |
