@@ -8,8 +8,8 @@ import de.nofelix.inventorybackend.domain.port.in.CreateProductUseCase;
 import de.nofelix.inventorybackend.domain.port.in.DeleteProductUseCase;
 import de.nofelix.inventorybackend.domain.port.in.GetProductUseCase;
 import de.nofelix.inventorybackend.domain.port.in.UpdateProductUseCase;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
@@ -23,29 +23,16 @@ import reactor.core.publisher.Mono;
  * <p>This controller handles HTTP requests and delegates business logic
  * to the appropriate use cases.</p>
  */
+@Slf4j
 @RestController
+@RequiredArgsConstructor
 public class ProductController implements ProductsApi {
-
-    private static final Logger log = LoggerFactory.getLogger(ProductController.class);
 
     private final GetProductUseCase getProductUseCase;
     private final CreateProductUseCase createProductUseCase;
     private final UpdateProductUseCase updateProductUseCase;
     private final DeleteProductUseCase deleteProductUseCase;
     private final ProductMapper productMapper;
-
-    public ProductController(
-            GetProductUseCase getProductUseCase,
-            CreateProductUseCase createProductUseCase,
-            UpdateProductUseCase updateProductUseCase,
-            DeleteProductUseCase deleteProductUseCase,
-            ProductMapper productMapper) {
-        this.getProductUseCase = getProductUseCase;
-        this.createProductUseCase = createProductUseCase;
-        this.updateProductUseCase = updateProductUseCase;
-        this.deleteProductUseCase = deleteProductUseCase;
-        this.productMapper = productMapper;
-    }
 
     @Override
     public Mono<ResponseEntity<ProductResponse>> createProduct(

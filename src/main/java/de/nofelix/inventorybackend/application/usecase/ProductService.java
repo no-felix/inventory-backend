@@ -8,8 +8,8 @@ import de.nofelix.inventorybackend.domain.port.in.DeleteProductUseCase;
 import de.nofelix.inventorybackend.domain.port.in.GetProductUseCase;
 import de.nofelix.inventorybackend.domain.port.in.UpdateProductUseCase;
 import de.nofelix.inventorybackend.domain.port.out.ProductRepositoryPort;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
@@ -21,21 +21,17 @@ import reactor.core.publisher.Mono;
  * <p>This service orchestrates the business logic for product operations,
  * delegating persistence to the repository port.</p>
  */
+@Slf4j
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class ProductService implements 
         GetProductUseCase, 
         CreateProductUseCase, 
         UpdateProductUseCase, 
         DeleteProductUseCase {
 
-    private static final Logger log = LoggerFactory.getLogger(ProductService.class);
-
     private final ProductRepositoryPort productRepository;
-
-    public ProductService(ProductRepositoryPort productRepository) {
-        this.productRepository = productRepository;
-    }
 
     // ========================================
     // GetProductUseCase Implementation

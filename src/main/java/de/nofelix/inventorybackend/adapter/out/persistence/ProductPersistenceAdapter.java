@@ -4,6 +4,7 @@ import de.nofelix.inventorybackend.adapter.out.persistence.entity.ProductEntity;
 import de.nofelix.inventorybackend.adapter.out.persistence.repository.ProductR2dbcRepository;
 import de.nofelix.inventorybackend.domain.model.Product;
 import de.nofelix.inventorybackend.domain.port.out.ProductRepositoryPort;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -17,13 +18,10 @@ import java.time.Instant;
  * delegating actual persistence operations to the R2DBC repository.</p>
  */
 @Component
+@RequiredArgsConstructor
 public class ProductPersistenceAdapter implements ProductRepositoryPort {
 
     private final ProductR2dbcRepository repository;
-
-    public ProductPersistenceAdapter(ProductR2dbcRepository repository) {
-        this.repository = repository;
-    }
 
     @Override
     public Mono<Product> save(Product product) {

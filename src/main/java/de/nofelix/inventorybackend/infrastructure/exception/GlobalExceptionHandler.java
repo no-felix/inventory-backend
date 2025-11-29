@@ -2,8 +2,7 @@ package de.nofelix.inventorybackend.infrastructure.exception;
 
 import de.nofelix.inventorybackend.domain.exception.DuplicateSkuException;
 import de.nofelix.inventorybackend.domain.exception.ProductNotFoundException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -19,10 +18,9 @@ import java.time.Instant;
  * 
  * <p>Converts domain and validation exceptions to RFC 7807 Problem Detail responses.</p>
  */
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-
-    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     private static final String ERROR_TYPE_BASE = "https://api.inventory.example.com/errors/";
 
