@@ -5,6 +5,7 @@ import de.nofelix.inventorybackend.domain.exception.UserAlreadyExistsException;
 import de.nofelix.inventorybackend.domain.model.User;
 import de.nofelix.inventorybackend.domain.port.in.AuthenticateUserUseCase;
 import de.nofelix.inventorybackend.domain.port.in.RegisterUserUseCase;
+import de.nofelix.inventorybackend.domain.port.in.SetupAdminUseCase;
 import de.nofelix.inventorybackend.domain.port.out.UserRepositoryPort;
 import de.nofelix.inventorybackend.infrastructure.security.JwtService;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +22,7 @@ import reactor.core.publisher.Mono;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class AuthService implements RegisterUserUseCase, AuthenticateUserUseCase {
+public class AuthService implements RegisterUserUseCase, AuthenticateUserUseCase, SetupAdminUseCase {
 
     private final UserRepositoryPort userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -87,6 +88,50 @@ public class AuthService implements RegisterUserUseCase, AuthenticateUserUseCase
                     }
                     return new AuthenticationException("Invalid or expired refresh token");
                 });
+    }
+
+    @Override
+    public Mono<User> setupAdmin(SetupAdminCommand command) {
+        log.info("Attempting initial admin setup for username: {}", command.username());
+
+        return isSetupRequired()
+                .flatMap(required -> {
+                    if (!required) {
+                        return Mono.error(new IllegalStateException("Admin account already exists. Setup not allowed."));
+                    }
+                    return userRepository.existsByUsername(command.username());
+                })
+                .flatMap(exists -> {
+                    if (exists) {
+                        return Mono.error(new UserAlreadyExistsException("username", command.username()));
+                    }
+                    return userRepository.existsByEmail(command.email());
+                })
+                .flatMap(exists -> {
+                    if (exists) {
+                        return Mono.error(new UserAlreadyExistsException("email", command.email()));
+                    }
+                    return createAdminUser(command);
+                });
+    }
+
+    @Override
+    public Mono<Boolean> isSetupRequired() {
+        return userRepository.existsAdminUser()
+                .map(exists -> !exists);
+    }
+
+    private Mono<User> createAdminUser(SetupAdminCommand command) {
+        User admin = User.builder()
+                .username(command.username())
+                .email(command.email())
+                .passwordHash(passwordEncoder.encode(command.password()))
+                .role(User.Role.ADMIN)
+                .enabled(true)
+                .build();
+
+        return userRepository.save(admin)
+                .doOnSuccess(saved -> log.info("Initial admin account created: {}", saved.getUsername()));
     }
 
     private Mono<User> createUser(RegisterCommand command) {

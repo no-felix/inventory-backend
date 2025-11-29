@@ -8,6 +8,7 @@ import de.nofelix.inventorybackend.domain.model.User;
 import de.nofelix.inventorybackend.domain.port.in.AuthenticateUserUseCase.AuthCommand;
 import de.nofelix.inventorybackend.domain.port.in.AuthenticateUserUseCase.AuthResult;
 import de.nofelix.inventorybackend.domain.port.in.RegisterUserUseCase.RegisterCommand;
+import de.nofelix.inventorybackend.domain.port.in.SetupAdminUseCase.SetupAdminCommand;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
@@ -42,6 +43,11 @@ public interface AuthMapper {
      * Converts an AuthResult to an AuthResponse.
      */
     AuthResponse toAuthResponse(AuthResult result);
+
+    /**
+     * Converts a RegisterRequest to a SetupAdminCommand.
+     */
+    SetupAdminCommand toSetupAdminCommand(RegisterRequest request);
 
     /**
      * Helper method to convert Instant to OffsetDateTime.

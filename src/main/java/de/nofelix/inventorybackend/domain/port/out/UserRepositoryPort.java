@@ -58,4 +58,11 @@ public interface UserRepositoryPort {
      * @return true if exists, false otherwise
      */
     Mono<Boolean> existsByEmail(String email);
+
+    /**
+     * Checks if any admin user exists.
+     *
+     * @return true if at least one admin exists, false otherwise
+     */
+    Mono<Boolean> existsAdminUser();
 }
