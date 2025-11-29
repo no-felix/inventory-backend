@@ -1,0 +1,230 @@
+# ============================================================
+# Inventory Backend - Application Configuration
+# ============================================================
+spring:
+  application:
+    name: inventory-backend
+
+  # ============================================================
+  # Database Configuration (R2DBC - Reactive)
+  # ============================================================
+  r2dbc:
+    url: r2dbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:inventory}
+    username: ${DB_USERNAME:inventory}
+    password: ${DB_PASSWORD:inventory}
+    pool:
+      enabled: true
+      initial-size: 5
+      max-size: 20
+      max-idle-time: 30m
+
+  # ============================================================
+  # Flyway Configuration (uses JDBC for migrations)
+  # ============================================================
+  flyway:
+    enabled: true
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:inventory}
+    user: ${DB_USERNAME:inventory}
+    password: ${DB_PASSWORD:inventory}
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    validate-on-migrate: true
+
+  # ============================================================
+  # JPA/Hibernate Configuration (if needed for complex queries)
+  # ============================================================
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:inventory}
+    username: ${DB_USERNAME:inventory}
+    password: ${DB_PASSWORD:inventory}
+    driver-class-name: org.postgresql.Driver
+
+  # ============================================================
+  # Jackson Configuration
+  # ============================================================
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+      indent-output: false
+    deserialization:
+      fail-on-unknown-properties: false
+    default-property-inclusion: non_null
+    date-format: "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
+
+# ============================================================
+# Server Configuration
+# ============================================================
+server:
+  port: ${SERVER_PORT:8080}
+  error:
+    include-message: always
+    include-binding-errors: always
+    include-stacktrace: never
+    include-exception: false
+
+# ============================================================
+# Actuator / Management Endpoints
+# ============================================================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,flyway,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized
+      show-components: when-authorized
+      probes:
+        enabled: true
+    info:
+      enabled: true
+  health:
+    db:
+      enabled: true
+    diskspace:
+      enabled: true
+    r2dbc:
+      enabled: true
+  info:
+    env:
+      enabled: true
+    build:
+      enabled: true
+    git:
+      enabled: true
+      mode: full
+
+# ============================================================
+# Application Info
+# ============================================================
+info:
+  app:
+    name: ${spring.application.name}
+    description: Inventory and Purchase Order Management System
+    version: '@project.version@'
+  java:
+    version: '@java.version@'
+
+# ============================================================
+# Logging Configuration
+# ============================================================
+logging:
+  level:
+    root: INFO
+    de.nofelix.inventorybackend: DEBUG
+    org.springframework.r2dbc: INFO
+    org.springframework.data.r2dbc: INFO
+    org.flywaydb: INFO
+    io.r2dbc.postgresql: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
+# ============================================================
+# Custom Application Properties
+# ============================================================
+inventory:
+  low-stock-threshold: ${LOW_STOCK_THRESHOLD:10}
+  default-page-size: 20
+  max-page-size: 100
+
+---
+# ============================================================
+# Development Profile
+# ============================================================
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+  # Use H2 for local development
+  r2dbc:
+    url: r2dbc:h2:mem:///inventory;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+
+  flyway:
+    url: jdbc:h2:mem:inventory;DB_CLOSE_DELAY=-1
+    user: sa
+    password:
+
+  datasource:
+    url: jdbc:h2:mem:inventory;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+logging:
+  level:
+    de.nofelix.inventorybackend: DEBUG
+    org.springframework.r2dbc: DEBUG
+    io.r2dbc.h2: DEBUG
+
+---
+# ============================================================
+# Docker/Container Profile
+# ============================================================
+spring:
+  config:
+    activate:
+      on-profile: docker
+
+  r2dbc:
+    url: r2dbc:postgresql://db:5432/inventory
+    username: inventory
+    password: inventory
+
+  flyway:
+    url: jdbc:postgresql://db:5432/inventory
+    user: inventory
+    password: inventory
+
+  datasource:
+    url: jdbc:postgresql://db:5432/inventory
+    username: inventory
+    password: inventory
+
+---
+# ============================================================
+# Production Profile
+# ============================================================
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+  jpa:
+    show-sql: false
+
+logging:
+  level:
+    root: WARN
+    de.nofelix.inventorybackend: INFO
+    org.springframework: WARN
+
+management:
+  endpoint:
+    health:
+      show-details: never
+      show-components: never
