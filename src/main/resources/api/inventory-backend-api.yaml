@@ -1,0 +1,857 @@
+openapi: 3.0.3
+info:
+  title: Inventory Backend API
+  description: |
+    REST API for the Inventory and Purchase Order management system.
+    This API provides endpoints for managing products, purchase orders,
+    stock movements, and inventory metrics.
+  version: 1.0.0
+  contact:
+    name: Inventory Backend Team
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+
+tags:
+  - name: Products
+    description: Product management endpoints
+  - name: Purchase Orders
+    description: Purchase order management endpoints
+  - name: Stock Movements
+    description: Stock movement history endpoints
+  - name: Metrics
+    description: Inventory metrics and reporting endpoints
+
+paths:
+  # ============================================================
+  # PRODUCTS
+  # ============================================================
+  /api/v1/products:
+    get:
+      tags:
+        - Products
+      summary: List all products
+      description: Retrieve a list of all products in the inventory
+      operationId: listProducts
+      parameters:
+        - name: page
+          in: query
+          description: Page number (0-indexed)
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          description: Page size
+          schema:
+            type: integer
+            default: 20
+        - name: sort
+          in: query
+          description: Sort field and direction (e.g., name,asc)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProductResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      tags:
+        - Products
+      summary: Create a new product
+      description: Create a new product in the inventory
+      operationId: createProduct
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+      responses:
+        '201':
+          description: Product created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/products/{id}:
+    get:
+      tags:
+        - Products
+      summary: Get a product by ID
+      description: Retrieve a single product by its ID
+      operationId: getProductById
+      parameters:
+        - $ref: '#/components/parameters/ProductId'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    put:
+      tags:
+        - Products
+      summary: Update a product
+      description: Update an existing product by its ID
+      operationId: updateProduct
+      parameters:
+        - $ref: '#/components/parameters/ProductId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+      responses:
+        '200':
+          description: Product updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      tags:
+        - Products
+      summary: Delete a product
+      description: Delete a product by its ID
+      operationId: deleteProduct
+      parameters:
+        - $ref: '#/components/parameters/ProductId'
+      responses:
+        '204':
+          description: Product deleted successfully
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # ============================================================
+  # PURCHASE ORDERS
+  # ============================================================
+  /api/v1/purchase-orders:
+    get:
+      tags:
+        - Purchase Orders
+      summary: List all purchase orders
+      description: Retrieve a list of all purchase orders
+      operationId: listPurchaseOrders
+      parameters:
+        - name: page
+          in: query
+          description: Page number (0-indexed)
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          description: Page size
+          schema:
+            type: integer
+            default: 20
+        - name: status
+          in: query
+          description: Filter by order status
+          schema:
+            $ref: '#/components/schemas/PurchaseOrderStatus'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PurchaseOrderResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      tags:
+        - Purchase Orders
+      summary: Create a new purchase order
+      description: |
+        Create a new purchase order. If `received` is set to `true`,
+        the order will be immediately processed and stock quantities
+        will be updated accordingly.
+      operationId: createPurchaseOrder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PurchaseOrderRequest'
+      responses:
+        '201':
+          description: Purchase order created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PurchaseOrderResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/purchase-orders/{id}:
+    get:
+      tags:
+        - Purchase Orders
+      summary: Get a purchase order by ID
+      description: Retrieve a single purchase order by its ID
+      operationId: getPurchaseOrderById
+      parameters:
+        - $ref: '#/components/parameters/PurchaseOrderId'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PurchaseOrderResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/purchase-orders/{id}/receive:
+    post:
+      tags:
+        - Purchase Orders
+      summary: Mark a purchase order as received
+      description: |
+        Mark a pending purchase order as received. This will update
+        the stock quantities for all products in the order and create
+        corresponding stock movement records.
+      operationId: receivePurchaseOrder
+      parameters:
+        - $ref: '#/components/parameters/PurchaseOrderId'
+      responses:
+        '200':
+          description: Purchase order received successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PurchaseOrderResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # ============================================================
+  # STOCK MOVEMENTS
+  # ============================================================
+  /api/v1/stock-movements:
+    get:
+      tags:
+        - Stock Movements
+      summary: List stock movements
+      description: Retrieve a list of stock movements with optional filtering
+      operationId: listStockMovements
+      parameters:
+        - name: page
+          in: query
+          description: Page number (0-indexed)
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          description: Page size
+          schema:
+            type: integer
+            default: 20
+        - name: productId
+          in: query
+          description: Filter by product ID
+          schema:
+            type: integer
+            format: int64
+        - name: reason
+          in: query
+          description: Filter by movement reason
+          schema:
+            $ref: '#/components/schemas/StockMovementReason'
+        - name: from
+          in: query
+          description: Filter movements from this date (inclusive)
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          description: Filter movements to this date (inclusive)
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StockMovementResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/stock-movements/product/{productId}:
+    get:
+      tags:
+        - Stock Movements
+      summary: Get stock movements for a product
+      description: Retrieve all stock movements for a specific product
+      operationId: getStockMovementsByProduct
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          description: Product ID
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StockMovementResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # ============================================================
+  # METRICS
+  # ============================================================
+  /api/v1/metrics/inventory-summary:
+    get:
+      tags:
+        - Metrics
+      summary: Get inventory summary
+      description: |
+        Retrieve a summary of the current inventory state including
+        total product count, total items, low stock alerts, and total value.
+      operationId: getInventorySummary
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventorySummaryResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/metrics/stock-levels:
+    get:
+      tags:
+        - Metrics
+      summary: Get stock levels
+      description: Retrieve current stock levels for all products
+      operationId: getStockLevels
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StockLevelResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/metrics/receipts:
+    get:
+      tags:
+        - Metrics
+      summary: Get receipts time series
+      description: |
+        Retrieve time series data of incoming stock quantities
+        for chart visualization.
+      operationId: getReceiptsTimeSeries
+      parameters:
+        - name: from
+          in: query
+          required: true
+          description: Start date (inclusive)
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: true
+          description: End date (inclusive)
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReceiptsTimeSeriesResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+# ============================================================
+# COMPONENTS
+# ============================================================
+components:
+  parameters:
+    ProductId:
+      name: id
+      in: path
+      required: true
+      description: Product ID
+      schema:
+        type: integer
+        format: int64
+
+    PurchaseOrderId:
+      name: id
+      in: path
+      required: true
+      description: Purchase Order ID
+      schema:
+        type: integer
+        format: int64
+
+  schemas:
+    # ----------------------------------------------------------
+    # Product Schemas
+    # ----------------------------------------------------------
+    ProductRequest:
+      type: object
+      required:
+        - sku
+        - name
+        - quantityOnHand
+        - unitPrice
+      properties:
+        sku:
+          type: string
+          minLength: 1
+          maxLength: 50
+          description: Unique stock keeping unit identifier
+          example: SKU-001
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: Product name
+          example: Widget
+        description:
+          type: string
+          maxLength: 1000
+          description: Product description (optional)
+          example: Small widget for general use
+        quantityOnHand:
+          type: integer
+          minimum: 0
+          description: Current quantity in stock
+          example: 100
+        unitPrice:
+          type: number
+          format: double
+          minimum: 0
+          description: Unit price of the product
+          example: 12.50
+
+    ProductResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Unique product identifier
+          example: 1
+        sku:
+          type: string
+          description: Unique stock keeping unit identifier
+          example: SKU-001
+        name:
+          type: string
+          description: Product name
+          example: Widget
+        description:
+          type: string
+          description: Product description
+          example: Small widget for general use
+        quantityOnHand:
+          type: integer
+          description: Current quantity in stock
+          example: 100
+        unitPrice:
+          type: number
+          format: double
+          description: Unit price of the product
+          example: 12.50
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp when the product was created
+        updatedAt:
+          type: string
+          format: date-time
+          description: Timestamp when the product was last updated
+
+    # ----------------------------------------------------------
+    # Purchase Order Schemas
+    # ----------------------------------------------------------
+    PurchaseOrderRequest:
+      type: object
+      required:
+        - supplierName
+        - lines
+      properties:
+        supplierName:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: Name of the supplier
+          example: Acme Supplies
+        lines:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/PurchaseOrderLineRequest'
+          description: Order line items
+        received:
+          type: boolean
+          default: false
+          description: |
+            If true, immediately apply to stock upon creation.
+            If false, order is created in PENDING status.
+          example: true
+
+    PurchaseOrderLineRequest:
+      type: object
+      required:
+        - productId
+        - quantity
+        - unitPrice
+      properties:
+        productId:
+          type: integer
+          format: int64
+          description: ID of the product being ordered
+          example: 1
+        quantity:
+          type: integer
+          minimum: 1
+          description: Quantity ordered
+          example: 50
+        unitPrice:
+          type: number
+          format: double
+          minimum: 0
+          description: Unit price for this order
+          example: 10.00
+
+    PurchaseOrderResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Unique purchase order identifier
+          example: 1
+        supplierName:
+          type: string
+          description: Name of the supplier
+          example: Acme Supplies
+        status:
+          $ref: '#/components/schemas/PurchaseOrderStatus'
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/PurchaseOrderLineResponse'
+          description: Order line items
+        totalAmount:
+          type: number
+          format: double
+          description: Total order amount
+          example: 600.00
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp when the order was created
+        receivedAt:
+          type: string
+          format: date-time
+          description: Timestamp when the order was received (null if pending)
+
+    PurchaseOrderLineResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Unique line identifier
+          example: 1
+        productId:
+          type: integer
+          format: int64
+          description: Product ID
+          example: 1
+        productSku:
+          type: string
+          description: Product SKU
+          example: SKU-001
+        productName:
+          type: string
+          description: Product name
+          example: Widget
+        quantity:
+          type: integer
+          description: Quantity ordered
+          example: 50
+        unitPrice:
+          type: number
+          format: double
+          description: Unit price
+          example: 10.00
+        lineTotal:
+          type: number
+          format: double
+          description: Line total (quantity * unitPrice)
+          example: 500.00
+
+    PurchaseOrderStatus:
+      type: string
+      enum:
+        - PENDING
+        - RECEIVED
+        - CANCELLED
+      description: Status of the purchase order
+
+    # ----------------------------------------------------------
+    # Stock Movement Schemas
+    # ----------------------------------------------------------
+    StockMovementResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Unique movement identifier
+          example: 1
+        productId:
+          type: integer
+          format: int64
+          description: Product ID
+          example: 1
+        productSku:
+          type: string
+          description: Product SKU
+          example: SKU-001
+        productName:
+          type: string
+          description: Product name
+          example: Widget
+        change:
+          type: integer
+          description: Quantity change (positive for increase, negative for decrease)
+          example: 50
+        reason:
+          $ref: '#/components/schemas/StockMovementReason'
+        relatedEntityType:
+          type: string
+          description: Type of related entity (e.g., PURCHASE_ORDER)
+          example: PURCHASE_ORDER
+        relatedEntityId:
+          type: integer
+          format: int64
+          description: ID of the related entity
+          example: 1
+        performedBy:
+          type: string
+          description: User who performed the action (optional)
+          example: admin
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp when the movement was recorded
+
+    StockMovementReason:
+      type: string
+      enum:
+        - PO_RECEIPT
+        - ADJUSTMENT
+        - SALE
+        - RETURN
+        - DAMAGE
+        - TRANSFER
+      description: Reason for the stock movement
+
+    # ----------------------------------------------------------
+    # Metrics Schemas
+    # ----------------------------------------------------------
+    InventorySummaryResponse:
+      type: object
+      properties:
+        productCount:
+          type: integer
+          description: Total number of products
+          example: 150
+        totalItems:
+          type: integer
+          description: Total items across all products
+          example: 5000
+        lowStockCount:
+          type: integer
+          description: Number of products with low stock
+          example: 12
+        totalValue:
+          type: number
+          format: double
+          description: Total inventory value
+          example: 125000.00
+
+    StockLevelResponse:
+      type: object
+      properties:
+        sku:
+          type: string
+          description: Product SKU
+          example: SKU-001
+        name:
+          type: string
+          description: Product name
+          example: Widget
+        quantity:
+          type: integer
+          description: Current quantity on hand
+          example: 100
+        unitPrice:
+          type: number
+          format: double
+          description: Unit price
+          example: 12.50
+        totalValue:
+          type: number
+          format: double
+          description: Total value (quantity * unitPrice)
+          example: 1250.00
+
+    ReceiptsTimeSeriesResponse:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+          description: Date of the receipts
+          example: "2025-11-29"
+        totalQuantity:
+          type: integer
+          description: Total quantity received on this date
+          example: 250
+        orderCount:
+          type: integer
+          description: Number of orders received on this date
+          example: 5
+
+    # ----------------------------------------------------------
+    # Error Schemas
+    # ----------------------------------------------------------
+    ProblemDetail:
+      type: object
+      description: RFC 7807 Problem Details
+      properties:
+        type:
+          type: string
+          format: uri
+          description: A URI reference that identifies the problem type
+          example: https://api.inventory.example.com/errors/not-found
+        title:
+          type: string
+          description: A short, human-readable summary of the problem type
+          example: Resource Not Found
+        status:
+          type: integer
+          description: The HTTP status code
+          example: 404
+        detail:
+          type: string
+          description: A human-readable explanation specific to this occurrence
+          example: Product with ID 123 was not found
+        instance:
+          type: string
+          format: uri
+          description: A URI reference that identifies the specific occurrence
+          example: /api/v1/products/123
+
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+
+    Conflict:
+      description: Resource conflict (e.g., duplicate SKU)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
