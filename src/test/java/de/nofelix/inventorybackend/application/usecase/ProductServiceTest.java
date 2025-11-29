@@ -3,9 +3,11 @@ package de.nofelix.inventorybackend.application.usecase;
 import de.nofelix.inventorybackend.domain.exception.DuplicateSkuException;
 import de.nofelix.inventorybackend.domain.exception.ProductNotFoundException;
 import de.nofelix.inventorybackend.domain.model.Product;
+import de.nofelix.inventorybackend.domain.model.StockMovement;
 import de.nofelix.inventorybackend.domain.port.in.CreateProductUseCase.CreateProductCommand;
 import de.nofelix.inventorybackend.domain.port.in.UpdateProductUseCase.UpdateProductCommand;
 import de.nofelix.inventorybackend.domain.port.out.ProductRepositoryPort;
+import de.nofelix.inventorybackend.domain.port.out.StockMovementRepositoryPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -42,6 +44,9 @@ class ProductServiceTest {
 
     @Mock
     private ProductRepositoryPort productRepository;
+
+    @Mock
+    private StockMovementRepositoryPort stockMovementRepository;
 
     @InjectMocks
     private ProductService productService;
@@ -260,6 +265,8 @@ class ProductServiceTest {
             when(productRepository.findById(1L)).thenReturn(Mono.just(sampleProduct));
             when(productRepository.save(any(Product.class))).thenAnswer(invocation -> 
                     Mono.just(invocation.getArgument(0)));
+            when(stockMovementRepository.save(any(StockMovement.class))).thenAnswer(invocation ->
+                    Mono.just(invocation.getArgument(0)));
 
             // when/then
             StepVerifier.create(productService.updateProduct(1L, command))
@@ -334,6 +341,8 @@ class ProductServiceTest {
 
             when(productRepository.findById(1L)).thenReturn(Mono.just(sampleProduct));
             when(productRepository.save(any(Product.class))).thenAnswer(invocation -> 
+                    Mono.just(invocation.getArgument(0)));
+            when(stockMovementRepository.save(any(StockMovement.class))).thenAnswer(invocation ->
                     Mono.just(invocation.getArgument(0)));
 
             // when/then

@@ -4,6 +4,7 @@ import de.nofelix.inventorybackend.adapter.in.web.model.StockMovementReason;
 import de.nofelix.inventorybackend.adapter.in.web.model.StockMovementResponse;
 import de.nofelix.inventorybackend.application.mapper.StockMovementMapper;
 import de.nofelix.inventorybackend.domain.model.StockMovement;
+import de.nofelix.inventorybackend.domain.port.in.CreateStockMovementUseCase;
 import de.nofelix.inventorybackend.domain.port.in.GetStockMovementUseCase;
 import de.nofelix.inventorybackend.infrastructure.exception.GlobalExceptionHandler;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,6 +44,9 @@ class StockMovementControllerTest {
     private GetStockMovementUseCase getStockMovementUseCase;
 
     @Mock
+    private CreateStockMovementUseCase createStockMovementUseCase;
+
+    @Mock
     private StockMovementMapper stockMovementMapper;
 
     private StockMovement sampleMovement;
@@ -52,6 +56,7 @@ class StockMovementControllerTest {
     void setUp() {
         StockMovementController controller = new StockMovementController(
                 getStockMovementUseCase,
+                createStockMovementUseCase,
                 stockMovementMapper
         );
 
