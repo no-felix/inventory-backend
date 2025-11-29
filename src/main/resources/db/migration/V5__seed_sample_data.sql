@@ -69,7 +69,7 @@ ON CONFLICT (sku) DO NOTHING;
 -- Note: total_amount is computed from order lines, not stored in DB
 -- ============================================================
 
--- Completed order (received)
+-- Completed order (received) - 5 days ago
 INSERT INTO purchase_orders (supplier_name, status, created_at, received_at) VALUES
     ('Tech Supplies Inc.', 'RECEIVED', NOW() - INTERVAL '7 days', NOW() - INTERVAL '5 days');
 
@@ -102,9 +102,41 @@ BEGIN
     SELECT po_id, id, 20, 39.99 FROM products WHERE sku = 'OFFC-002';
 END $$;
 
--- Another completed order (older)
+-- Another completed order (2 weeks ago)
 INSERT INTO purchase_orders (supplier_name, status, created_at, received_at) VALUES
     ('Hardware World', 'RECEIVED', NOW() - INTERVAL '14 days', NOW() - INTERVAL '12 days');
+
+-- Older completed order (3 weeks ago)
+INSERT INTO purchase_orders (supplier_name, status, created_at, received_at) VALUES
+    ('Global Electronics', 'RECEIVED', NOW() - INTERVAL '22 days', NOW() - INTERVAL '20 days');
+
+DO $$
+DECLARE
+    po_id BIGINT;
+BEGIN
+    SELECT id INTO po_id FROM purchase_orders WHERE supplier_name = 'Global Electronics' LIMIT 1;
+    
+    INSERT INTO purchase_order_lines (purchase_order_id, product_id, quantity, unit_price)
+    SELECT po_id, id, 20, 89.99 FROM products WHERE sku = 'ELEC-003'
+    UNION ALL
+    SELECT po_id, id, 40, 29.99 FROM products WHERE sku = 'ELEC-004';
+END $$;
+
+-- Oldest completed order (4 weeks ago)
+INSERT INTO purchase_orders (supplier_name, status, created_at, received_at) VALUES
+    ('Storage Solutions Ltd', 'RECEIVED', NOW() - INTERVAL '28 days', NOW() - INTERVAL '26 days');
+
+DO $$
+DECLARE
+    po_id BIGINT;
+BEGIN
+    SELECT id INTO po_id FROM purchase_orders WHERE supplier_name = 'Storage Solutions Ltd' LIMIT 1;
+    
+    INSERT INTO purchase_order_lines (purchase_order_id, product_id, quantity, unit_price)
+    SELECT po_id, id, 30, 34.99 FROM products WHERE sku = 'STOR-001'
+    UNION ALL
+    SELECT po_id, id, 100, 19.99 FROM products WHERE sku = 'STOR-003';
+END $$;
 
 DO $$
 DECLARE
@@ -160,7 +192,7 @@ INSERT INTO stock_movements (product_id, change, reason, performed_by, created_a
 SELECT id, 3, 'RETURN', 'admin', NOW() - INTERVAL '1 day'
 FROM products WHERE sku = 'OFFC-004';
 
--- Sale movements
+-- Sale movements (spread across 30 days)
 INSERT INTO stock_movements (product_id, change, reason, performed_by, created_at)
 SELECT id, -5, 'SALE', 'user', NOW() - INTERVAL '2 days'
 FROM products WHERE sku = 'ELEC-004';
@@ -168,6 +200,52 @@ FROM products WHERE sku = 'ELEC-004';
 INSERT INTO stock_movements (product_id, change, reason, performed_by, created_at)
 SELECT id, -10, 'SALE', 'user', NOW() - INTERVAL '4 days'
 FROM products WHERE sku = 'OFFC-001';
+
+INSERT INTO stock_movements (product_id, change, reason, performed_by, created_at)
+SELECT id, -8, 'SALE', 'user', NOW() - INTERVAL '8 days'
+FROM products WHERE sku = 'STOR-001';
+
+INSERT INTO stock_movements (product_id, change, reason, performed_by, created_at)
+SELECT id, -3, 'SALE', 'user', NOW() - INTERVAL '15 days'
+FROM products WHERE sku = 'ELEC-001';
+
+INSERT INTO stock_movements (product_id, change, reason, performed_by, created_at)
+SELECT id, -12, 'SALE', 'user', NOW() - INTERVAL '18 days'
+FROM products WHERE sku = 'OFFC-005';
+
+INSERT INTO stock_movements (product_id, change, reason, performed_by, created_at)
+SELECT id, -6, 'SALE', 'user', NOW() - INTERVAL '22 days'
+FROM products WHERE sku = 'TOOL-002';
+
+INSERT INTO stock_movements (product_id, change, reason, performed_by, created_at)
+SELECT id, -4, 'SALE', 'user', NOW() - INTERVAL '25 days'
+FROM products WHERE sku = 'ELEC-002';
+
+INSERT INTO stock_movements (product_id, change, reason, performed_by, created_at)
+SELECT id, -15, 'SALE', 'user', NOW() - INTERVAL '28 days'
+FROM products WHERE sku = 'STOR-003';
+
+-- Stock movements from Global Electronics order (20 days ago)
+INSERT INTO stock_movements (product_id, change, reason, related_entity_type, related_entity_id, created_at)
+SELECT p.id, 20, 'PO_RECEIPT', 'PURCHASE_ORDER', po.id, NOW() - INTERVAL '20 days'
+FROM products p, purchase_orders po
+WHERE p.sku = 'ELEC-003' AND po.supplier_name = 'Global Electronics';
+
+INSERT INTO stock_movements (product_id, change, reason, related_entity_type, related_entity_id, created_at)
+SELECT p.id, 40, 'PO_RECEIPT', 'PURCHASE_ORDER', po.id, NOW() - INTERVAL '20 days'
+FROM products p, purchase_orders po
+WHERE p.sku = 'ELEC-004' AND po.supplier_name = 'Global Electronics';
+
+-- Stock movements from Storage Solutions order (26 days ago)
+INSERT INTO stock_movements (product_id, change, reason, related_entity_type, related_entity_id, created_at)
+SELECT p.id, 30, 'PO_RECEIPT', 'PURCHASE_ORDER', po.id, NOW() - INTERVAL '26 days'
+FROM products p, purchase_orders po
+WHERE p.sku = 'STOR-001' AND po.supplier_name = 'Storage Solutions Ltd';
+
+INSERT INTO stock_movements (product_id, change, reason, related_entity_type, related_entity_id, created_at)
+SELECT p.id, 100, 'PO_RECEIPT', 'PURCHASE_ORDER', po.id, NOW() - INTERVAL '26 days'
+FROM products p, purchase_orders po
+WHERE p.sku = 'STOR-003' AND po.supplier_name = 'Storage Solutions Ltd';
 
 -- Add comments
 COMMENT ON TABLE users IS 'User accounts for authentication - seeded with sample data';

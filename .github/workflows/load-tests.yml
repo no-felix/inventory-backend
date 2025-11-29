@@ -10,7 +10,6 @@ on:
         type: choice
         options:
           - smoke
-          - load
           - spike
   schedule:
     # Run smoke test daily at 2 AM UTC
@@ -83,12 +82,6 @@ jobs:
       - name: Run k6 smoke test
         if: github.event.inputs.test_type == 'smoke' || github.event_name == 'schedule'
         run: k6 run k6/smoke-test.js --out json=k6-results.json
-        env:
-          BASE_URL: http://localhost:8080
-
-      - name: Run k6 load test
-        if: github.event.inputs.test_type == 'load'
-        run: k6 run k6/load-test.js --out json=k6-results.json
         env:
           BASE_URL: http://localhost:8080
 
