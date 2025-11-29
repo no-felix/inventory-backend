@@ -1,0 +1,106 @@
+name: Load Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_type:
+        description: 'Test type to run'
+        required: true
+        default: 'smoke'
+        type: choice
+        options:
+          - smoke
+          - load
+          - spike
+  schedule:
+    # Run smoke test daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+jobs:
+  load-test:
+    name: k6 Load Test
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: inventory
+          POSTGRES_USER: inventory
+          POSTGRES_PASSWORD: inventory
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U inventory -d inventory"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Build application
+        run: |
+          chmod +x ./mvnw
+          ./mvnw clean package -DskipTests -q
+
+      - name: Start application
+        run: |
+          java -jar target/*.jar &
+          echo "Waiting for application to start..."
+          for i in {1..30}; do
+            if curl -s http://localhost:8080/actuator/health | grep -q "UP"; then
+              echo "Application is ready!"
+              break
+            fi
+            sleep 2
+          done
+        env:
+          SPRING_PROFILES_ACTIVE: dev
+          SPRING_R2DBC_URL: r2dbc:postgresql://localhost:5432/inventory
+          SPRING_R2DBC_USERNAME: inventory
+          SPRING_R2DBC_PASSWORD: inventory
+          SPRING_FLYWAY_URL: jdbc:postgresql://localhost:5432/inventory
+          SPRING_FLYWAY_USER: inventory
+          SPRING_FLYWAY_PASSWORD: inventory
+
+      - name: Install k6
+        run: |
+          sudo gpg -k
+          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install k6
+
+      - name: Run k6 smoke test
+        if: github.event.inputs.test_type == 'smoke' || github.event_name == 'schedule'
+        run: k6 run k6/smoke-test.js --out json=k6-results.json
+        env:
+          BASE_URL: http://localhost:8080
+
+      - name: Run k6 load test
+        if: github.event.inputs.test_type == 'load'
+        run: k6 run k6/load-test.js --out json=k6-results.json
+        env:
+          BASE_URL: http://localhost:8080
+
+      - name: Run k6 spike test
+        if: github.event.inputs.test_type == 'spike'
+        run: k6 run k6/spike-test.js --out json=k6-results.json
+        env:
+          BASE_URL: http://localhost:8080
+
+      - name: Upload k6 results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: k6-results
+          path: k6-results.json
