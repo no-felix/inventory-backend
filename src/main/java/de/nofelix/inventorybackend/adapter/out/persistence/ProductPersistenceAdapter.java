@@ -92,6 +92,7 @@ public class ProductPersistenceAdapter implements ProductRepositoryPort {
                 .unitPrice(product.getUnitPrice())
                 .createdAt(product.getCreatedAt())
                 .updatedAt(product.getUpdatedAt())
+                .version(product.getVersion())
                 .build();
     }
 
@@ -105,6 +106,7 @@ public class ProductPersistenceAdapter implements ProductRepositoryPort {
                 .unitPrice(entity.getUnitPrice())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
+                .version(entity.getVersion())
                 .build();
     }
 }

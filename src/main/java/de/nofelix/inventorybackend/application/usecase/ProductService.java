@@ -119,6 +119,7 @@ public class ProductService implements
                             .quantityOnHand(command.quantityOnHand())
                             .unitPrice(command.unitPrice())
                             .createdAt(existingProduct.getCreatedAt())
+                            .version(existingProduct.getVersion())
                             .build();
                     
                     return productRepository.save(updatedProduct);

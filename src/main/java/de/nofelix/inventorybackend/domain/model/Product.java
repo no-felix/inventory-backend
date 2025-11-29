@@ -33,6 +33,7 @@ public class Product {
     private BigDecimal unitPrice;
     private Instant createdAt;
     private Instant updatedAt;
+    private Long version;
 
     // ========================================
     // Business Methods
