@@ -24,7 +24,7 @@ class ProductTest {
 
         @Test
         @DisplayName("should increase quantity by given amount")
-        void shouldIncreaseQuantityByGivenAmount() {
+        void increaseStock_withPositiveQuantity_increasesQuantityOnHand() {
             // given
             Product product = createProductWithQuantity(10);
 
@@ -37,7 +37,7 @@ class ProductTest {
 
         @Test
         @DisplayName("should increase from zero quantity")
-        void shouldIncreaseFromZeroQuantity() {
+        void increaseStock_withZeroInitialQuantity_increasesQuantityOnHand() {
             // given
             Product product = createProductWithQuantity(0);
 
@@ -50,7 +50,7 @@ class ProductTest {
 
         @Test
         @DisplayName("should throw exception when quantity is zero")
-        void shouldThrowExceptionWhenQuantityIsZero() {
+        void increaseStock_withZeroQuantity_throwsIllegalArgumentException() {
             // given
             Product product = createProductWithQuantity(10);
 
@@ -62,7 +62,7 @@ class ProductTest {
 
         @Test
         @DisplayName("should throw exception when quantity is negative")
-        void shouldThrowExceptionWhenQuantityIsNegative() {
+        void increaseStock_withNegativeQuantity_throwsIllegalArgumentException() {
             // given
             Product product = createProductWithQuantity(10);
 
@@ -79,7 +79,7 @@ class ProductTest {
 
         @Test
         @DisplayName("should decrease quantity by given amount")
-        void shouldDecreaseQuantityByGivenAmount() {
+        void decreaseStock_withPositiveQuantity_decreasesQuantityOnHand() {
             // given
             Product product = createProductWithQuantity(10);
 
@@ -92,7 +92,7 @@ class ProductTest {
 
         @Test
         @DisplayName("should decrease to zero")
-        void shouldDecreaseToZero() {
+        void decreaseStock_withExactQuantity_decreasesToZero() {
             // given
             Product product = createProductWithQuantity(5);
 
@@ -105,7 +105,7 @@ class ProductTest {
 
         @Test
         @DisplayName("should throw exception when quantity is zero")
-        void shouldThrowExceptionWhenQuantityIsZero() {
+        void decreaseStock_withZeroQuantity_throwsIllegalArgumentException() {
             // given
             Product product = createProductWithQuantity(10);
 
@@ -117,7 +117,7 @@ class ProductTest {
 
         @Test
         @DisplayName("should throw exception when quantity is negative")
-        void shouldThrowExceptionWhenQuantityIsNegative() {
+        void decreaseStock_withNegativeQuantity_throwsIllegalArgumentException() {
             // given
             Product product = createProductWithQuantity(10);
 
@@ -129,7 +129,7 @@ class ProductTest {
 
         @Test
         @DisplayName("should throw exception when insufficient stock")
-        void shouldThrowExceptionWhenInsufficientStock() {
+        void decreaseStock_withInsufficientStock_throwsIllegalStateException() {
             // given
             Product product = createProductWithQuantity(5);
 
@@ -148,7 +148,7 @@ class ProductTest {
 
         @Test
         @DisplayName("should calculate total value correctly")
-        void shouldCalculateTotalValueCorrectly() {
+        void calculateTotalValue_withValidQuantityAndPrice_returnsCorrectValue() {
             // given
             Product product = Product.builder()
                     .quantityOnHand(10)
@@ -164,7 +164,7 @@ class ProductTest {
 
         @Test
         @DisplayName("should return zero when quantity is null")
-        void shouldReturnZeroWhenQuantityIsNull() {
+        void calculateTotalValue_withNullQuantity_returnsZero() {
             // given
             Product product = Product.builder()
                     .quantityOnHand(null)
@@ -180,7 +180,7 @@ class ProductTest {
 
         @Test
         @DisplayName("should return zero when unit price is null")
-        void shouldReturnZeroWhenUnitPriceIsNull() {
+        void calculateTotalValue_withNullUnitPrice_returnsZero() {
             // given
             Product product = Product.builder()
                     .quantityOnHand(10)
@@ -196,7 +196,7 @@ class ProductTest {
 
         @Test
         @DisplayName("should return zero when quantity is zero")
-        void shouldReturnZeroWhenQuantityIsZero() {
+        void calculateTotalValue_withZeroQuantity_returnsZero() {
             // given
             Product product = Product.builder()
                     .quantityOnHand(0)
@@ -217,7 +217,7 @@ class ProductTest {
 
         @Test
         @DisplayName("should return true when quantity equals threshold")
-        void shouldReturnTrueWhenQuantityEqualsThreshold() {
+        void isLowStock_withQuantityEqualsThreshold_returnsTrue() {
             // given
             Product product = createProductWithQuantity(5);
 
@@ -227,7 +227,7 @@ class ProductTest {
 
         @Test
         @DisplayName("should return true when quantity is below threshold")
-        void shouldReturnTrueWhenQuantityIsBelowThreshold() {
+        void isLowStock_withQuantityBelowThreshold_returnsTrue() {
             // given
             Product product = createProductWithQuantity(3);
 
@@ -237,7 +237,7 @@ class ProductTest {
 
         @Test
         @DisplayName("should return false when quantity is above threshold")
-        void shouldReturnFalseWhenQuantityIsAboveThreshold() {
+        void isLowStock_withQuantityAboveThreshold_returnsFalse() {
             // given
             Product product = createProductWithQuantity(10);
 
@@ -247,7 +247,7 @@ class ProductTest {
 
         @Test
         @DisplayName("should return true when quantity is zero")
-        void shouldReturnTrueWhenQuantityIsZero() {
+        void isLowStock_withZeroQuantity_returnsTrue() {
             // given
             Product product = createProductWithQuantity(0);
 
@@ -257,7 +257,7 @@ class ProductTest {
 
         @Test
         @DisplayName("should return false when quantity is null")
-        void shouldReturnFalseWhenQuantityIsNull() {
+        void isLowStock_withNullQuantity_returnsFalse() {
             // given
             Product product = Product.builder()
                     .quantityOnHand(null)
@@ -274,7 +274,7 @@ class ProductTest {
 
         @Test
         @DisplayName("should create product with all fields")
-        void shouldCreateProductWithAllFields() {
+        void builder_withAllFields_createsCompleteProduct() {
             // given
             Instant now = Instant.now();
 
@@ -303,7 +303,7 @@ class ProductTest {
 
         @Test
         @DisplayName("should create product with minimal fields")
-        void shouldCreateProductWithMinimalFields() {
+        void builder_withMinimalFields_createsProductWithNulls() {
             // when
             Product product = Product.builder()
                     .sku("SKU-001")

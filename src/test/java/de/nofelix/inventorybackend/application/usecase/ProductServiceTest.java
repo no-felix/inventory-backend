@@ -71,7 +71,7 @@ class ProductServiceTest {
 
         @Test
         @DisplayName("should return product when found")
-        void shouldReturnProductWhenFound() {
+        void getProductById_withExistingId_returnsProduct() {
             // given
             when(productRepository.findById(1L)).thenReturn(Mono.just(sampleProduct));
 
@@ -89,7 +89,7 @@ class ProductServiceTest {
 
         @Test
         @DisplayName("should throw ProductNotFoundException when not found")
-        void shouldThrowProductNotFoundExceptionWhenNotFound() {
+        void getProductById_withNonExistingId_throwsProductNotFoundException() {
             // given
             when(productRepository.findById(999L)).thenReturn(Mono.empty());
 
@@ -109,7 +109,7 @@ class ProductServiceTest {
 
         @Test
         @DisplayName("should return product when found by SKU")
-        void shouldReturnProductWhenFoundBySku() {
+        void getProductBySku_withExistingSku_returnsProduct() {
             // given
             when(productRepository.findBySku("SKU-001")).thenReturn(Mono.just(sampleProduct));
 
@@ -123,7 +123,7 @@ class ProductServiceTest {
 
         @Test
         @DisplayName("should throw ProductNotFoundException when SKU not found")
-        void shouldThrowProductNotFoundExceptionWhenSkuNotFound() {
+        void getProductBySku_withNonExistingSku_throwsProductNotFoundException() {
             // given
             when(productRepository.findBySku("INVALID-SKU")).thenReturn(Mono.empty());
 
@@ -143,7 +143,7 @@ class ProductServiceTest {
 
         @Test
         @DisplayName("should return paginated products")
-        void shouldReturnPaginatedProducts() {
+        void listProducts_withPagination_returnsProductsFlux() {
             // given
             Product product1 = Product.builder().id(1L).sku("SKU-001").name("Product 1").build();
             Product product2 = Product.builder().id(2L).sku("SKU-002").name("Product 2").build();
@@ -159,7 +159,7 @@ class ProductServiceTest {
 
         @Test
         @DisplayName("should return empty flux when no products exist")
-        void shouldReturnEmptyFluxWhenNoProductsExist() {
+        void listProducts_withNoProducts_returnsEmptyFlux() {
             // given
             when(productRepository.findAll(0, 10)).thenReturn(Flux.empty());
 
@@ -175,7 +175,7 @@ class ProductServiceTest {
 
         @Test
         @DisplayName("should create product when SKU is unique")
-        void shouldCreateProductWhenSkuIsUnique() {
+        void createProduct_withUniqueSku_createsAndReturnsProduct() {
             // given
             CreateProductCommand command = new CreateProductCommand(
                     "NEW-SKU",
@@ -217,7 +217,7 @@ class ProductServiceTest {
 
         @Test
         @DisplayName("should throw DuplicateSkuException when SKU exists")
-        void shouldThrowDuplicateSkuExceptionWhenSkuExists() {
+        void createProduct_withDuplicateSku_throwsDuplicateSkuException() {
             // given
             CreateProductCommand command = new CreateProductCommand(
                     "EXISTING-SKU",
@@ -247,7 +247,7 @@ class ProductServiceTest {
 
         @Test
         @DisplayName("should update product when found")
-        void shouldUpdateProductWhenFound() {
+        void updateProduct_withExistingId_updatesAndReturnsProduct() {
             // given
             UpdateProductCommand command = new UpdateProductCommand(
                     "SKU-001",
@@ -274,7 +274,7 @@ class ProductServiceTest {
 
         @Test
         @DisplayName("should throw ProductNotFoundException when updating non-existent product")
-        void shouldThrowProductNotFoundExceptionWhenUpdatingNonExistent() {
+        void updateProduct_withNonExistingId_throwsProductNotFoundException() {
             // given
             UpdateProductCommand command = new UpdateProductCommand(
                     "SKU-999",
@@ -296,7 +296,7 @@ class ProductServiceTest {
 
         @Test
         @DisplayName("should throw DuplicateSkuException when changing SKU to existing one")
-        void shouldThrowDuplicateSkuExceptionWhenChangingSkuToExisting() {
+        void updateProduct_withDuplicateSku_throwsDuplicateSkuException() {
             // given
             UpdateProductCommand command = new UpdateProductCommand(
                     "EXISTING-SKU",  // Different from sampleProduct's SKU
@@ -322,7 +322,7 @@ class ProductServiceTest {
 
         @Test
         @DisplayName("should allow keeping same SKU on update")
-        void shouldAllowKeepingSameSkuOnUpdate() {
+        void updateProduct_withSameSku_updatesWithoutSkuCheck() {
             // given
             UpdateProductCommand command = new UpdateProductCommand(
                     "SKU-001",  // Same as sampleProduct's SKU
@@ -355,7 +355,7 @@ class ProductServiceTest {
 
         @Test
         @DisplayName("should delete product when exists")
-        void shouldDeleteProductWhenExists() {
+        void deleteProduct_withExistingId_deletesProduct() {
             // given
             when(productRepository.existsById(1L)).thenReturn(Mono.just(true));
             when(productRepository.deleteById(1L)).thenReturn(Mono.empty());
@@ -369,7 +369,7 @@ class ProductServiceTest {
 
         @Test
         @DisplayName("should throw ProductNotFoundException when deleting non-existent product")
-        void shouldThrowProductNotFoundExceptionWhenDeletingNonExistent() {
+        void deleteProduct_withNonExistingId_throwsProductNotFoundException() {
             // given
             when(productRepository.existsById(999L)).thenReturn(Mono.just(false));
 

@@ -119,7 +119,7 @@ class ProductControllerTest {
 
         @Test
         @DisplayName("should return 200 with product when found")
-        void shouldReturn200WithProductWhenFound() {
+        void getProductById_withExistingId_returns200WithProduct() {
             // given
             when(getProductUseCase.getProductById(1L)).thenReturn(Mono.just(sampleProduct));
             when(productMapper.toResponse(sampleProduct)).thenReturn(sampleResponse);
@@ -142,7 +142,7 @@ class ProductControllerTest {
 
         @Test
         @DisplayName("should return 404 when product not found")
-        void shouldReturn404WhenProductNotFound() {
+        void getProductById_withNonExistingId_returns404() {
             // given
             when(getProductUseCase.getProductById(999L))
                     .thenReturn(Mono.error(new ProductNotFoundException(999L)));
@@ -162,7 +162,7 @@ class ProductControllerTest {
 
         @Test
         @DisplayName("should return 200 with list of products")
-        void shouldReturn200WithListOfProducts() {
+        void listProducts_withProducts_returns200WithList() {
             // given
             Product product1 = Product.builder().id(1L).sku("SKU-001").name("Product 1").build();
             Product product2 = Product.builder().id(2L).sku("SKU-002").name("Product 2").build();
@@ -187,7 +187,7 @@ class ProductControllerTest {
 
         @Test
         @DisplayName("should return 200 with empty list when no products")
-        void shouldReturn200WithEmptyListWhenNoProducts() {
+        void listProducts_withNoProducts_returns200WithEmptyList() {
             // given
             when(getProductUseCase.listProducts(anyInt(), anyInt())).thenReturn(Flux.empty());
 
@@ -206,7 +206,7 @@ class ProductControllerTest {
 
         @Test
         @DisplayName("should return 201 when product created successfully")
-        void shouldReturn201WhenProductCreatedSuccessfully() {
+        void createProduct_withValidRequest_returns201WithProduct() {
             // given
             CreateProductCommand command = new CreateProductCommand(
                     "SKU-001", "Test Product", "A test product", 100, new BigDecimal("29.99")
@@ -233,7 +233,7 @@ class ProductControllerTest {
 
         @Test
         @DisplayName("should return 409 when SKU already exists")
-        void shouldReturn409WhenSkuAlreadyExists() {
+        void createProduct_withDuplicateSku_returns409() {
             // given
             CreateProductCommand command = new CreateProductCommand(
                     "EXISTING-SKU", "Test Product", "A test product", 100, new BigDecimal("29.99")
@@ -265,7 +265,7 @@ class ProductControllerTest {
 
         @Test
         @DisplayName("should return 200 when product updated successfully")
-        void shouldReturn200WhenProductUpdatedSuccessfully() {
+        void updateProduct_withValidRequest_returns200WithProduct() {
             // given
             UpdateProductCommand command = new UpdateProductCommand(
                     "SKU-001", "Updated Product", "Updated description", 150, new BigDecimal("39.99")
@@ -316,7 +316,7 @@ class ProductControllerTest {
 
         @Test
         @DisplayName("should return 404 when updating non-existent product")
-        void shouldReturn404WhenUpdatingNonExistentProduct() {
+        void updateProduct_withNonExistingId_returns404() {
             // given
             UpdateProductCommand command = new UpdateProductCommand(
                     "SKU-001", "Updated Product", "Updated description", 150, new BigDecimal("39.99")
@@ -342,7 +342,7 @@ class ProductControllerTest {
 
         @Test
         @DisplayName("should return 204 when product deleted successfully")
-        void shouldReturn204WhenProductDeletedSuccessfully() {
+        void deleteProduct_withExistingId_returns204() {
             // given
             when(deleteProductUseCase.deleteProduct(1L)).thenReturn(Mono.empty());
 
@@ -357,7 +357,7 @@ class ProductControllerTest {
 
         @Test
         @DisplayName("should return 404 when deleting non-existent product")
-        void shouldReturn404WhenDeletingNonExistentProduct() {
+        void deleteProduct_withNonExistingId_returns404() {
             // given
             when(deleteProductUseCase.deleteProduct(999L))
                     .thenReturn(Mono.error(new ProductNotFoundException(999L)));
