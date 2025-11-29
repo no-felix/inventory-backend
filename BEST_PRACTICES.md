@@ -509,20 +509,45 @@ void createProduct_withDuplicateSku_throwsConflictException() { }
 void findById_withNonExistentId_throwsNotFoundException() { }
 ```
 
-### Test Structure (AAA Pattern)
+### Test Structure (Given/When/Then - BDD Style)
+
+We use **Given/When/Then** comments (BDD-style) to structure our tests, which maps to the AAA pattern:
+- **Given** = Arrange (set up test data and mocks)
+- **When** = Act (execute the code under test)
+- **Then** = Assert (verify the results)
 
 ```java
 @Test
 void createProduct_withValidRequest_returnsCreatedProduct() {
-    // Arrange
+    // given
     var request = new ProductRequest("SKU-001", "Widget", 100, BigDecimal.TEN);
+    when(repository.save(any())).thenReturn(Mono.just(savedProduct));
     
-    // Act
+    // when
     var result = productService.createProduct(request);
     
-    // Assert
-    assertThat(result).isNotNull();
-    assertThat(result.sku()).isEqualTo("SKU-001");
+    // then
+    StepVerifier.create(result)
+            .assertNext(product -> {
+                assertThat(product).isNotNull();
+                assertThat(product.getSku()).isEqualTo("SKU-001");
+            })
+            .verifyComplete();
+}
+```
+
+For tests where act and assert are combined (e.g., exception testing):
+
+```java
+@Test
+void decreaseStock_withInsufficientStock_throwsException() {
+    // given
+    Product product = createProductWithQuantity(5);
+
+    // when/then
+    assertThatThrownBy(() -> product.decreaseStock(10))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("Insufficient stock");
 }
 ```
 
