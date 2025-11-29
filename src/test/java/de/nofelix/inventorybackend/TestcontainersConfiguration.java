@@ -8,16 +8,17 @@ import org.testcontainers.utility.DockerImageName;
 
 /**
  * Test configuration providing Testcontainers for integration tests.
+ * 
+ * <p>Uses PostgreSQLContainer with @ServiceConnection which automatically
+ * configures both JDBC (for Flyway) and R2DBC connection details.</p>
  */
 @TestConfiguration(proxyBeanMethods = false)
 public class TestcontainersConfiguration {
 
     @Bean
     @ServiceConnection
-    public PostgreSQLContainer<?> postgresContainer() {
+    PostgreSQLContainer<?> postgresContainer() {
         return new PostgreSQLContainer<>(DockerImageName.parse("postgres:16-alpine"))
-                .withDatabaseName("inventory_test")
-                .withUsername("test")
-                .withPassword("test");
+                .withReuse(true);
     }
 }
