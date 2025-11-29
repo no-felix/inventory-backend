@@ -2,6 +2,7 @@ package de.nofelix.inventorybackend.infrastructure.exception;
 
 import de.nofelix.inventorybackend.domain.exception.AuthenticationException;
 import de.nofelix.inventorybackend.domain.exception.DuplicateSkuException;
+import de.nofelix.inventorybackend.domain.exception.InsufficientStockException;
 import de.nofelix.inventorybackend.domain.exception.ProductNotFoundException;
 import de.nofelix.inventorybackend.domain.exception.PurchaseOrderNotFoundException;
 import de.nofelix.inventorybackend.domain.exception.PurchaseOrderNotReceivableException;
@@ -97,6 +98,24 @@ public class GlobalExceptionHandler {
         problemDetail.setTitle("Duplicate SKU");
         problemDetail.setProperty("timestamp", Instant.now());
         problemDetail.setProperty("sku", ex.getSku());
+        
+        return Mono.just(problemDetail);
+    }
+
+    @ExceptionHandler(InsufficientStockException.class)
+    public Mono<ProblemDetail> handleInsufficientStock(InsufficientStockException ex) {
+        log.warn("Insufficient stock: {}", ex.getMessage());
+        
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+                HttpStatus.CONFLICT, 
+                ex.getMessage()
+        );
+        problemDetail.setType(URI.create(ERROR_TYPE_BASE + "insufficient-stock"));
+        problemDetail.setTitle("Insufficient Stock");
+        problemDetail.setProperty("timestamp", Instant.now());
+        problemDetail.setProperty("productId", ex.getProductId());
+        problemDetail.setProperty("currentQuantity", ex.getCurrentQuantity());
+        problemDetail.setProperty("requestedChange", ex.getRequestedChange());
         
         return Mono.just(problemDetail);
     }
