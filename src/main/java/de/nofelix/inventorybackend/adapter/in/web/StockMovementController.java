@@ -2,11 +2,14 @@ package de.nofelix.inventorybackend.adapter.in.web;
 
 import de.nofelix.inventorybackend.adapter.in.web.api.StockMovementsApi;
 import de.nofelix.inventorybackend.adapter.in.web.model.StockMovementReason;
+import de.nofelix.inventorybackend.adapter.in.web.model.StockMovementRequest;
 import de.nofelix.inventorybackend.adapter.in.web.model.StockMovementResponse;
 import de.nofelix.inventorybackend.application.mapper.StockMovementMapper;
+import de.nofelix.inventorybackend.domain.port.in.CreateStockMovementUseCase;
 import de.nofelix.inventorybackend.domain.port.in.GetStockMovementUseCase;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ServerWebExchange;
@@ -17,9 +20,9 @@ import java.time.LocalDate;
 
 /**
  * REST controller implementing the StockMovementsApi interface.
- * 
- * <p>This controller handles HTTP requests for stock movement (audit trail)
- * operations and delegates business logic to the appropriate use cases.</p>
+ *
+ * <p>This controller handles HTTP requests for stock movement operations
+ * including creating new movements and querying the audit trail.</p>
  */
 @Slf4j
 @RestController
@@ -27,6 +30,7 @@ import java.time.LocalDate;
 public class StockMovementController implements StockMovementsApi {
 
     private final GetStockMovementUseCase getStockMovementUseCase;
+    private final CreateStockMovementUseCase createStockMovementUseCase;
     private final StockMovementMapper stockMovementMapper;
 
     @Override
@@ -58,10 +62,23 @@ public class StockMovementController implements StockMovementsApi {
             Long productId,
             ServerWebExchange exchange) {
         log.debug("Received request to get stock movements for product ID: {}", productId);
-        
+
         Flux<StockMovementResponse> movements = getStockMovementUseCase.getStockMovementsByProduct(productId)
                 .map(stockMovementMapper::toResponse);
-        
+
         return Mono.just(ResponseEntity.ok(movements));
+    }
+
+    @Override
+    public Mono<ResponseEntity<StockMovementResponse>> createStockMovement(
+            Mono<StockMovementRequest> stockMovementRequest,
+            ServerWebExchange exchange) {
+        log.debug("Received request to create stock movement");
+
+        return stockMovementRequest
+                .map(stockMovementMapper::toCreateCommand)
+                .flatMap(createStockMovementUseCase::createStockMovement)
+                .map(stockMovementMapper::toResponse)
+                .map(response -> ResponseEntity.status(HttpStatus.CREATED).body(response));
     }
 }

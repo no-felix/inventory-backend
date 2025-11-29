@@ -468,6 +468,41 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+    post:
+      tags:
+        - Stock Movements
+      summary: Create a stock movement
+      description: |
+        Manually create a stock movement (adjustment, damage, sale, return, or transfer).
+        This will automatically update the product's quantity on hand.
+        Note: PO_RECEIPT movements are created automatically when receiving purchase orders.
+      operationId: createStockMovement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StockMovementRequest'
+      responses:
+        '201':
+          description: Stock movement created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StockMovementResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Insufficient stock for the requested change
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
   /api/v1/stock-movements/product/{productId}:
     get:
       tags:
@@ -992,6 +1027,47 @@ components:
     # ----------------------------------------------------------
     # Stock Movement Schemas
     # ----------------------------------------------------------
+    StockMovementRequest:
+      type: object
+      required:
+        - productId
+        - change
+        - reason
+      properties:
+        productId:
+          type: integer
+          format: int64
+          description: ID of the product
+          example: 1
+        change:
+          type: integer
+          description: |
+            Quantity change. Use negative values for decreases (damage, sale, etc.)
+            and positive values for increases (return, adjustment).
+          example: -5
+        reason:
+          type: string
+          enum:
+            - ADJUSTMENT
+            - SALE
+            - RETURN
+            - DAMAGE
+            - TRANSFER
+          description: |
+            Reason for the movement. Note: PO_RECEIPT is not allowed here,
+            use the purchase order receive endpoint instead.
+          example: DAMAGE
+        notes:
+          type: string
+          maxLength: 500
+          description: Optional notes about the movement
+          example: Damaged during shipping
+        performedBy:
+          type: string
+          maxLength: 100
+          description: Optional identifier of who performed this action
+          example: admin
+
     StockMovementResponse:
       type: object
       properties:

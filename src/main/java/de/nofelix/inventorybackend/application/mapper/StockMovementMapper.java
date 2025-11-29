@@ -1,8 +1,10 @@
 package de.nofelix.inventorybackend.application.mapper;
 
 import de.nofelix.inventorybackend.adapter.in.web.model.StockMovementReason;
+import de.nofelix.inventorybackend.adapter.in.web.model.StockMovementRequest;
 import de.nofelix.inventorybackend.adapter.in.web.model.StockMovementResponse;
 import de.nofelix.inventorybackend.domain.model.StockMovement;
+import de.nofelix.inventorybackend.domain.port.in.CreateStockMovementUseCase.CreateStockMovementCommand;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
@@ -44,6 +46,19 @@ public interface StockMovementMapper {
             return null;
         }
         return de.nofelix.inventorybackend.domain.model.StockMovementReason.valueOf(reason.getValue());
+    }
+
+    /**
+     * Converts a StockMovementRequest to a CreateStockMovementCommand.
+     */
+    default CreateStockMovementCommand toCreateCommand(StockMovementRequest request) {
+        return new CreateStockMovementCommand(
+                request.getProductId(),
+                request.getChange(),
+                toDomainReason(StockMovementReason.fromValue(request.getReason().getValue())),
+                request.getNotes(),
+                request.getPerformedBy()
+        );
     }
 
     /**
