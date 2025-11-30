@@ -1,0 +1,58 @@
+# Git
+.git
+.gitignore
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+
+# Build outputs
+target/
+!target/*.jar
+build/
+out/
+
+# Test files (technically not needed for prod)
+src/test/
+
+# Documentation
+*.md
+!README.md
+docs/
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+Jenkinsfile
+
+# Docker (avoid recursive)
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# K6 load tests
+k6/
+
+# Local environment files
+.env
+.env.*
+*.local
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Maven wrapper
+.mvn/wrapper/maven-wrapper.jar
+
+# Temporary files
+tmp/
+temp/
+*.tmp

@@ -1,0 +1,171 @@
+# -----------------------------------------------------------
+# Apply: kubectl apply -f k8s/
+# -----------------------------------------------------------
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inventory-backend
+  labels:
+    app: inventory-backend
+    version: v1
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: inventory-backend
+  template:
+    metadata:
+      labels:
+        app: inventory-backend
+        version: v1
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/actuator/prometheus"
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+
+      containers:
+        - name: inventory-backend
+          image: inventory-backend:latest # the image is not on dockerhub!
+          imagePullPolicy: IfNotPresent
+          
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          
+          # Environment variables; You could import these from a ConfigMap/Secret directly
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: "prod"
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: inventory-backend-config
+                  key: db-host
+            - name: DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: inventory-backend-config
+                  key: db-port
+            - name: DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: inventory-backend-config
+                  key: db-name
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: inventory-backend-secrets
+                  key: db-username
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: inventory-backend-secrets
+                  key: db-password
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: inventory-backend-secrets
+                  key: jwt-secret
+            - name: CORS_ALLOWED_ORIGINS
+              valueFrom:
+                configMapKeyRef:
+                  name: inventory-backend-config
+                  key: cors-allowed-origins
+            - name: JAVA_OPTS
+              value: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:InitialRAMPercentage=50.0"
+
+          # Resource limits (just random values, limit is probably way too high for a real cluster)
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+
+          # Kubernetes probes
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 30  # Allow up to 5 minutes for startup
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop:
+                - ALL
+
+      # Be good citizens! (A lot of values are defaults, but this is for clarity)
+      terminationGracePeriodSeconds: 30
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: inventory-backend
+  labels:
+    app: inventory-backend
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: inventory-backend
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: inventory-backend-config
+data:
+  db-host: "postgres-service"
+  db-port: "5432"
+  db-name: "inventory"
+  cors-allowed-origins: "https://your-frontend.example.com"
+
+---
+# NOTE: In prod, use external secrets management (Vault, AWS Secrets Manager, etc...)
+# This is just an example - DO NOT commit real secrets! (Or use sealed-secrets)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: inventory-backend-secrets
+type: Opaque
+stringData:
+  db-username: "inventory"
+  db-password: "CHANGE_ME_IN_PRODUCTION"
+  jwt-secret: "your-production-jwt-secret-at-least-256-bits-long-change-this"
