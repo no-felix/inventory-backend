@@ -283,8 +283,11 @@ paths:
     delete:
       tags:
         - Products
-      summary: Delete a product
-      description: Delete a product by its ID
+      summary: Delete a product (soft delete)
+      description: |
+        Soft delete a product by its ID. The product will be marked as inactive
+        but remains in the database for historical reference (stock movements,
+        purchase orders). Inactive products are excluded from list queries.
       operationId: deleteProduct
       parameters:
         - $ref: '#/components/parameters/ProductId'
@@ -885,6 +888,10 @@ components:
           format: double
           description: Unit price of the product
           example: 12.50
+        active:
+          type: boolean
+          description: Whether the product is active (not soft-deleted)
+          example: true
         createdAt:
           type: string
           format: date-time

@@ -160,7 +160,7 @@ public class ProductService implements
 
     @Override
     public Mono<Void> deleteProduct(Long id) {
-        log.info("Deleting product with ID: {}", id);
+        log.info("Soft deleting product with ID: {}", id);
         
         return productRepository.existsById(id)
                 .flatMap(exists -> {
@@ -169,6 +169,6 @@ public class ProductService implements
                     }
                     return productRepository.deleteById(id);
                 })
-                .doOnSuccess(v -> log.info("Deleted product with ID: {}", id));
+                .doOnSuccess(v -> log.info("Soft deleted product with ID: {}", id));
     }
 }

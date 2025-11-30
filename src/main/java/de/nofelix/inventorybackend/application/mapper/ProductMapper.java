@@ -38,6 +38,7 @@ public interface ProductMapper {
     @Mapping(target = "unitPrice", expression = "java(toDouble(product.getUnitPrice()))")
     @Mapping(target = "createdAt", expression = "java(toOffsetDateTime(product.getCreatedAt()))")
     @Mapping(target = "updatedAt", expression = "java(toOffsetDateTime(product.getUpdatedAt()))")
+    @Mapping(target = "active", source = "active")
     ProductResponse toResponse(Product product);
 
     /**
