@@ -27,8 +27,13 @@ services:
       - DB_PASSWORD=inventory
       - JWT_SECRET=your-production-secret-key-change-this-in-production-at-least-32-characters
       - CORS_ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000
+      - CACHE_ENABLED=true
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
     depends_on:
       db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health/liveness"]
@@ -36,6 +41,26 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s
+    restart: unless-stopped
+    networks:
+      - inventory-network
+
+  # ----------------------------------------------------------
+  # Redis Cache
+  # ----------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: inventory-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     restart: unless-stopped
     networks:
       - inventory-network
@@ -69,6 +94,8 @@ services:
 # ----------------------------------------------------------
 volumes:
   postgres-data:
+    driver: local
+  redis-data:
     driver: local
 
 # ----------------------------------------------------------

@@ -37,6 +37,7 @@
         <testcontainers.version>2.0.2</testcontainers.version>
         <testcontainers-postgresql.version>1.21.3</testcontainers-postgresql.version>
         <jjwt.version>0.13.0</jjwt.version>
+        <micrometer.version>1.15.0</micrometer.version>
     </properties>
     
     <dependencyManagement>
