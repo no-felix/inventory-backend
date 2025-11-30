@@ -3,6 +3,7 @@ package de.nofelix.inventorybackend.adapter.out.persistence.repository;
 import de.nofelix.inventorybackend.adapter.out.persistence.entity.ProductEntity;
 import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.stereotype.Repository;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
@@ -26,4 +27,19 @@ public interface ProductR2dbcRepository extends R2dbcRepository<ProductEntity, L
      * @return true if exists
      */
     Mono<Boolean> existsBySku(String sku);
+
+    /**
+     * Finds all active products.
+     *
+     * @return a Flux of active product entities
+     */
+    Flux<ProductEntity> findByActiveTrue();
+
+    /**
+     * Checks if an active product with the given SKU exists.
+     *
+     * @param sku the product SKU
+     * @return true if an active product with the SKU exists
+     */
+    Mono<Boolean> existsBySkuAndActiveTrue(String sku);
 }

@@ -57,4 +57,7 @@ public class ProductEntity {
     @Version
     @Column("version")
     private Long version;
+
+    @Column("active")
+    private Boolean active;
 }

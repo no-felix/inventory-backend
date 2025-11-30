@@ -30,6 +30,7 @@ public class ProductPersistenceAdapter implements ProductRepositoryPort {
         // Set timestamps for new entities
         if (entity.getId() == null) {
             entity.setCreatedAt(Instant.now());
+            entity.setActive(true);  // New products are active by default
         }
         entity.setUpdatedAt(Instant.now());
         
@@ -40,18 +41,20 @@ public class ProductPersistenceAdapter implements ProductRepositoryPort {
     @Override
     public Mono<Product> findById(Long id) {
         return repository.findById(id)
+                .filter(entity -> entity.getActive() != null && entity.getActive())
                 .map(this::toDomain);
     }
 
     @Override
     public Mono<Product> findBySku(String sku) {
         return repository.findBySku(sku)
+                .filter(entity -> entity.getActive() != null && entity.getActive())
                 .map(this::toDomain);
     }
 
     @Override
     public Flux<Product> findAll(int page, int size) {
-        return repository.findAll()
+        return repository.findByActiveTrue()
                 .skip((long) page * size)
                 .take(size)
                 .map(this::toDomain);
@@ -59,23 +62,39 @@ public class ProductPersistenceAdapter implements ProductRepositoryPort {
 
     @Override
     public Flux<Product> findAll() {
+        return repository.findByActiveTrue()
+                .map(this::toDomain);
+    }
+
+    @Override
+    public Flux<Product> findAllIncludingInactive() {
         return repository.findAll()
                 .map(this::toDomain);
     }
 
     @Override
     public Mono<Void> deleteById(Long id) {
-        return repository.deleteById(id);
+        // Soft delete: set active to false instead of deleting
+        return repository.findById(id)
+                .flatMap(entity -> {
+                    entity.setActive(false);
+                    entity.setUpdatedAt(Instant.now());
+                    return repository.save(entity);
+                })
+                .then();
     }
 
     @Override
     public Mono<Boolean> existsBySku(String sku) {
-        return repository.existsBySku(sku);
+        // Only check active products for SKU uniqueness
+        return repository.existsBySkuAndActiveTrue(sku);
     }
 
     @Override
     public Mono<Boolean> existsById(Long id) {
-        return repository.existsById(id);
+        return repository.findById(id)
+                .map(entity -> entity.getActive() != null && entity.getActive())
+                .defaultIfEmpty(false);
     }
 
     // ========================================
@@ -93,6 +112,7 @@ public class ProductPersistenceAdapter implements ProductRepositoryPort {
                 .createdAt(product.getCreatedAt())
                 .updatedAt(product.getUpdatedAt())
                 .version(product.getVersion())
+                .active(product.getActive())
                 .build();
     }
 
@@ -107,6 +127,7 @@ public class ProductPersistenceAdapter implements ProductRepositoryPort {
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .version(entity.getVersion())
+                .active(entity.getActive())
                 .build();
     }
 }
