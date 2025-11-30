@@ -34,6 +34,8 @@ public class Product {
     private Instant createdAt;
     private Instant updatedAt;
     private Long version;
+    @Builder.Default
+    private Boolean active = true;
 
     // ========================================
     // Business Methods
@@ -90,5 +92,21 @@ public class Product {
      */
     public boolean isLowStock(int threshold) {
         return quantityOnHand != null && quantityOnHand <= threshold;
+    }
+
+    /**
+     * Checks if the product is active (not soft-deleted).
+     *
+     * @return true if the product is active
+     */
+    public boolean isActive() {
+        return active != null && active;
+    }
+
+    /**
+     * Soft deletes this product by setting active to false.
+     */
+    public void deactivate() {
+        this.active = false;
     }
 }

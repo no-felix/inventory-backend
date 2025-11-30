@@ -37,26 +37,33 @@ public interface ProductRepositoryPort {
     Mono<Product> findBySku(String sku);
 
     /**
-     * Retrieves all products with pagination.
+     * Retrieves all active products with pagination.
      *
      * @param page the page number (0-indexed)
      * @param size the page size
-     * @return a Flux of products
+     * @return a Flux of active products
      */
     Flux<Product> findAll(int page, int size);
 
     /**
-     * Retrieves all products.
+     * Retrieves all active products.
      *
-     * @return a Flux of all products
+     * @return a Flux of all active products
      */
     Flux<Product> findAll();
 
     /**
-     * Deletes a product by its ID.
+     * Retrieves all products including inactive (soft-deleted) ones.
+     *
+     * @return a Flux of all products
+     */
+    Flux<Product> findAllIncludingInactive();
+
+    /**
+     * Soft deletes a product by setting active to false.
      *
      * @param id the product ID
-     * @return a Mono that completes when deletion is done
+     * @return a Mono that completes when soft delete is done
      */
     Mono<Void> deleteById(Long id);
 
