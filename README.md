@@ -28,7 +28,7 @@
 - � **JWT Authentication** — "Secure" API with register, login, and token refresh
 - 🗃️ **PostgreSQL** — Production-ready database with Flyway migrations
 - 📊 **Inventory Metrics** — Low stock alerts, slow-moving items, valuation reports
-- 🧪 **Comprehensive Testing** — 237 tests with Testcontainers
+- 🧪 **Comprehensive Testing** — 243 tests with Testcontainers
 - 🐳 **Docker Ready** — Docker Compose for local development
 
 ## 🏛️ Architecture
@@ -354,7 +354,7 @@ All errors follow [RFC 7807](https://datatracker.ietf.org/doc/html/rfc7807) Prob
 open target/site/jacoco/index.html
 ```
 
-**Test Results:** 237 tests passing ✅
+**Test Results:** 243 tests passing ✅
 
 ### Test Categories
 
@@ -371,7 +371,7 @@ open target/site/jacoco/index.html
 The application includes sample data for development (loaded via Flyway migration V5):
 
 - **25 products** across categories (Electronics, Office, Storage, Tools, Low Stock)
-- **3 purchase orders** (received and pending)
+- **5 purchase orders** (4 received, 1 pending)
 - **Stock movements** for audit trail
 
 This data is automatically loaded when the application starts.
@@ -405,7 +405,7 @@ This data is automatically loaded when the application starts.
 |----------|-------------|
 | **Framework** | Spring Boot 4, Spring WebFlux, Spring Data R2DBC, Spring Security |
 | **Database** | PostgreSQL 16, Flyway Migrations, H2 (dev) |
-| **Security** | JWT (JJWT 0.12), BCrypt |
+| **Security** | JWT (JJWT 0.13), BCrypt |
 | **API** | OpenAPI 3.0, OpenAPI Generator |
 | **Testing** | JUnit 5, Mockito, Testcontainers, StepVerifier |
 | **Code Quality** | Lombok, MapStruct, JaCoCo |
