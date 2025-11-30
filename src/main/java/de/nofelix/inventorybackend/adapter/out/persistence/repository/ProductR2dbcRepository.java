@@ -42,4 +42,11 @@ public interface ProductR2dbcRepository extends R2dbcRepository<ProductEntity, L
      * @return true if an active product with the SKU exists
      */
     Mono<Boolean> existsBySkuAndActiveTrue(String sku);
+
+    /**
+     * Counts all active products.
+     *
+     * @return the count of active products
+     */
+    Mono<Long> countByActiveTrue();
 }

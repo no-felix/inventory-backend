@@ -97,6 +97,11 @@ public class ProductPersistenceAdapter implements ProductRepositoryPort {
                 .defaultIfEmpty(false);
     }
 
+    @Override
+    public Mono<Long> count() {
+        return repository.countByActiveTrue();
+    }
+
     // ========================================
     // Mapping Methods
     // ========================================

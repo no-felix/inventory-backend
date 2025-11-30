@@ -2,6 +2,7 @@ package de.nofelix.inventorybackend.application.usecase;
 
 import de.nofelix.inventorybackend.domain.exception.DuplicateSkuException;
 import de.nofelix.inventorybackend.domain.exception.ProductNotFoundException;
+import de.nofelix.inventorybackend.domain.model.Page;
 import de.nofelix.inventorybackend.domain.model.Product;
 import de.nofelix.inventorybackend.domain.model.StockMovement;
 import de.nofelix.inventorybackend.domain.model.StockMovementReason;
@@ -11,11 +12,11 @@ import de.nofelix.inventorybackend.domain.port.in.GetProductUseCase;
 import de.nofelix.inventorybackend.domain.port.in.UpdateProductUseCase;
 import de.nofelix.inventorybackend.domain.port.out.ProductRepositoryPort;
 import de.nofelix.inventorybackend.domain.port.out.StockMovementRepositoryPort;
+import de.nofelix.inventorybackend.infrastructure.cache.ProductCache;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.Instant;
@@ -38,6 +39,7 @@ public class ProductService implements
 
     private final ProductRepositoryPort productRepository;
     private final StockMovementRepositoryPort stockMovementRepository;
+    private final ProductCache productCache;
 
     // ========================================
     // GetProductUseCase Implementation
@@ -47,15 +49,28 @@ public class ProductService implements
     @Transactional(readOnly = true)
     public Mono<Product> getProductById(Long id) {
         log.debug("Getting product by ID: {}", id);
-        return productRepository.findById(id)
+        
+        // Try cache first, fall back to database
+        return productCache.getProduct(id)
+                .switchIfEmpty(Mono.defer(() ->
+                        productRepository.findById(id)
+                                .flatMap(product -> productCache.cacheProduct(product)
+                                        .thenReturn(product))
+                ))
                 .switchIfEmpty(Mono.error(new ProductNotFoundException(id)));
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Flux<Product> listProducts(int page, int size) {
+    public Mono<Page<Product>> listProducts(int page, int size) {
         log.debug("Listing products - page: {}, size: {}", page, size);
-        return productRepository.findAll(page, size);
+        
+        return productRepository.count()
+                .flatMap(totalElements -> 
+                    productRepository.findAll(page, size)
+                            .collectList()
+                            .map(products -> Page.of(products, totalElements, page, size))
+                );
     }
 
     @Override
@@ -132,6 +147,9 @@ public class ProductService implements
 
                     return productRepository.save(updatedProduct)
                             .flatMap(savedProduct -> {
+                                // Evict from cache on update
+                                Mono<Boolean> cacheEvict = productCache.evictProduct(savedProduct.getId());
+                                
                                 // Create adjustment movement if quantity changed
                                 if (quantityChange != 0) {
                                     log.info("Creating auto-adjustment movement for product {} with change {}",
@@ -145,10 +163,11 @@ public class ProductService implements
                                             .createdAt(Instant.now())
                                             .build();
 
-                                    return stockMovementRepository.save(movement)
+                                    return cacheEvict
+                                            .then(stockMovementRepository.save(movement))
                                             .thenReturn(savedProduct);
                                 }
-                                return Mono.just(savedProduct);
+                                return cacheEvict.thenReturn(savedProduct);
                             });
                 })
                 .doOnSuccess(p -> log.info("Updated product with ID: {}", p.getId()));
@@ -167,7 +186,9 @@ public class ProductService implements
                     if (!exists) {
                         return Mono.error(new ProductNotFoundException(id));
                     }
-                    return productRepository.deleteById(id);
+                    // Evict from cache before deleting
+                    return productCache.evictProduct(id)
+                            .then(productRepository.deleteById(id));
                 })
                 .doOnSuccess(v -> log.info("Soft deleted product with ID: {}", id));
     }

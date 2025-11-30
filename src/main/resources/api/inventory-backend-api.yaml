@@ -197,9 +197,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ProductResponse'
+                $ref: '#/components/schemas/PagedProductResponse'
         '500':
           $ref: '#/components/responses/InternalServerError'
 
@@ -900,6 +898,41 @@ components:
           type: string
           format: date-time
           description: Timestamp when the product was last updated
+
+    PagedProductResponse:
+      type: object
+      description: Paginated response containing products and pagination metadata
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductResponse'
+          description: List of products on this page
+        totalElements:
+          type: integer
+          format: int64
+          description: Total number of elements across all pages
+          example: 150
+        totalPages:
+          type: integer
+          description: Total number of pages
+          example: 8
+        page:
+          type: integer
+          description: Current page number (0-indexed)
+          example: 0
+        size:
+          type: integer
+          description: Number of elements per page
+          example: 20
+        hasNext:
+          type: boolean
+          description: Whether there is a next page
+          example: true
+        hasPrevious:
+          type: boolean
+          description: Whether there is a previous page
+          example: false
 
     # ----------------------------------------------------------
     # Purchase Order Schemas

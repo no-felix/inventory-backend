@@ -82,4 +82,11 @@ public interface ProductRepositoryPort {
      * @return true if exists, false otherwise
      */
     Mono<Boolean> existsById(Long id);
+
+    /**
+     * Counts all active products.
+     *
+     * @return the total count of active products
+     */
+    Mono<Long> count();
 }

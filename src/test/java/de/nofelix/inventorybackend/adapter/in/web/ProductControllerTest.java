@@ -1,10 +1,12 @@
 package de.nofelix.inventorybackend.adapter.in.web;
 
+import de.nofelix.inventorybackend.adapter.in.web.model.PagedProductResponse;
 import de.nofelix.inventorybackend.adapter.in.web.model.ProductRequest;
 import de.nofelix.inventorybackend.adapter.in.web.model.ProductResponse;
 import de.nofelix.inventorybackend.application.mapper.ProductMapper;
 import de.nofelix.inventorybackend.domain.exception.DuplicateSkuException;
 import de.nofelix.inventorybackend.domain.exception.ProductNotFoundException;
+import de.nofelix.inventorybackend.domain.model.Page;
 import de.nofelix.inventorybackend.domain.model.Product;
 import de.nofelix.inventorybackend.domain.port.in.CreateProductUseCase;
 import de.nofelix.inventorybackend.domain.port.in.CreateProductUseCase.CreateProductCommand;
@@ -22,18 +24,17 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -166,14 +167,17 @@ class ProductControllerTest {
             // given
             Product product1 = Product.builder().id(1L).sku("SKU-001").name("Product 1").build();
             Product product2 = Product.builder().id(2L).sku("SKU-002").name("Product 2").build();
+            Page<Product> productPage = Page.of(List.of(product1, product2), 2L, 0, 10);
+            PagedProductResponse pagedResponse = new PagedProductResponse()
+                    .content(List.of(
+                            new ProductResponse().id(1L).sku("SKU-001").name("Product 1"),
+                            new ProductResponse().id(2L).sku("SKU-002").name("Product 2")
+                    ))
+                    .page(0).size(10).totalElements(2L).totalPages(1).hasNext(false).hasPrevious(false);
 
             when(getProductUseCase.listProducts(anyInt(), anyInt()))
-                    .thenReturn(Flux.just(product1, product2));
-            // Use lenient stubbing since Flux elements may or may not be consumed based on test client behavior
-            lenient().when(productMapper.toResponse(any(Product.class))).thenAnswer(invocation -> {
-                Product p = invocation.getArgument(0);
-                return new ProductResponse().id(p.getId()).sku(p.getSku()).name(p.getName());
-            });
+                    .thenReturn(Mono.just(productPage));
+            when(productMapper.toPagedResponse(any(Page.class))).thenReturn(pagedResponse);
 
             // when/then
             webTestClient.get()
@@ -189,7 +193,13 @@ class ProductControllerTest {
         @DisplayName("should return 200 with empty list when no products")
         void listProducts_withNoProducts_returns200WithEmptyList() {
             // given
-            when(getProductUseCase.listProducts(anyInt(), anyInt())).thenReturn(Flux.empty());
+            Page<Product> emptyPage = Page.of(List.of(), 0L, 0, 20);
+            PagedProductResponse emptyPagedResponse = new PagedProductResponse()
+                    .content(List.of())
+                    .page(0).size(20).totalElements(0L).totalPages(0).hasNext(false).hasPrevious(false);
+
+            when(getProductUseCase.listProducts(anyInt(), anyInt())).thenReturn(Mono.just(emptyPage));
+            when(productMapper.toPagedResponse(any(Page.class))).thenReturn(emptyPagedResponse);
 
             // when/then
             webTestClient.get()

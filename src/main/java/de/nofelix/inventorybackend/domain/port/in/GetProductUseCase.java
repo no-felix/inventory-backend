@@ -1,7 +1,7 @@
 package de.nofelix.inventorybackend.domain.port.in;
 
+import de.nofelix.inventorybackend.domain.model.Page;
 import de.nofelix.inventorybackend.domain.model.Product;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
@@ -21,13 +21,13 @@ public interface GetProductUseCase {
     Mono<Product> getProductById(Long id);
 
     /**
-     * Retrieves all products with optional pagination.
+     * Retrieves all products with pagination.
      *
      * @param page the page number (0-indexed)
      * @param size the page size
-     * @return a Flux of products
+     * @return a Page of products with pagination metadata
      */
-    Flux<Product> listProducts(int page, int size);
+    Mono<Page<Product>> listProducts(int page, int size);
 
     /**
      * Retrieves a product by its SKU.

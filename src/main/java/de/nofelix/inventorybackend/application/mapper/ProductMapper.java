@@ -1,7 +1,9 @@
 package de.nofelix.inventorybackend.application.mapper;
 
+import de.nofelix.inventorybackend.adapter.in.web.model.PagedProductResponse;
 import de.nofelix.inventorybackend.adapter.in.web.model.ProductRequest;
 import de.nofelix.inventorybackend.adapter.in.web.model.ProductResponse;
+import de.nofelix.inventorybackend.domain.model.Page;
 import de.nofelix.inventorybackend.domain.model.Product;
 import de.nofelix.inventorybackend.domain.port.in.CreateProductUseCase.CreateProductCommand;
 import de.nofelix.inventorybackend.domain.port.in.UpdateProductUseCase.UpdateProductCommand;
@@ -13,6 +15,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.List;
 
 /**
  * MapStruct mapper for Product conversions between domain, API, and command objects.
@@ -40,6 +43,26 @@ public interface ProductMapper {
     @Mapping(target = "updatedAt", expression = "java(toOffsetDateTime(product.getUpdatedAt()))")
     @Mapping(target = "active", source = "active")
     ProductResponse toResponse(Product product);
+
+    /**
+     * Converts a list of Product domain objects to ProductResponse list.
+     */
+    List<ProductResponse> toResponseList(List<Product> products);
+
+    /**
+     * Converts a Page of Products to a PagedProductResponse.
+     */
+    default PagedProductResponse toPagedResponse(Page<Product> page) {
+        PagedProductResponse response = new PagedProductResponse();
+        response.setContent(toResponseList(page.getContent()));
+        response.setTotalElements(page.getTotalElements());
+        response.setTotalPages(page.getTotalPages());
+        response.setPage(page.getPage());
+        response.setSize(page.getSize());
+        response.setHasNext(page.isHasNext());
+        response.setHasPrevious(page.isHasPrevious());
+        return response;
+    }
 
     /**
      * Helper method to convert Double to BigDecimal.

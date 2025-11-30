@@ -1,6 +1,7 @@
 package de.nofelix.inventorybackend.adapter.in.web;
 
 import de.nofelix.inventorybackend.adapter.in.web.api.ProductsApi;
+import de.nofelix.inventorybackend.adapter.in.web.model.PagedProductResponse;
 import de.nofelix.inventorybackend.adapter.in.web.model.ProductRequest;
 import de.nofelix.inventorybackend.adapter.in.web.model.ProductResponse;
 import de.nofelix.inventorybackend.application.mapper.ProductMapper;
@@ -14,7 +15,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ServerWebExchange;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
@@ -69,17 +69,16 @@ public class ProductController implements ProductsApi {
     }
 
     @Override
-    public Mono<ResponseEntity<Flux<ProductResponse>>> listProducts(
+    public Mono<ResponseEntity<PagedProductResponse>> listProducts(
             Integer page,
             Integer size,
             String sort,
             ServerWebExchange exchange) {
         log.debug("Received request to list products - page: {}, size: {}, sort: {}", page, size, sort);
         
-        Flux<ProductResponse> products = getProductUseCase.listProducts(page, size)
-                .map(productMapper::toResponse);
-        
-        return Mono.just(ResponseEntity.ok(products));
+        return getProductUseCase.listProducts(page, size)
+                .map(productMapper::toPagedResponse)
+                .map(ResponseEntity::ok);
     }
 
     @Override

@@ -139,6 +139,25 @@ jwt:
   access-token-expiration: ${JWT_ACCESS_EXPIRATION:900}      # 15 minutes
   refresh-token-expiration: ${JWT_REFRESH_EXPIRATION:604800} # 7 days
 
+# ============================================================
+# Redis Configuration
+# ============================================================
+spring.data.redis:
+  host: ${REDIS_HOST:localhost}
+  port: ${REDIS_PORT:6379}
+  password: ${REDIS_PASSWORD:}
+  timeout: 2000ms
+
+# ============================================================
+# Cache Configuration
+# ============================================================
+cache:
+  enabled: ${CACHE_ENABLED:false}
+  product:
+    ttl: ${CACHE_PRODUCT_TTL:300}  # 5 minutes
+  metrics:
+    ttl: ${CACHE_METRICS_TTL:60}   # 1 minute
+
 ---
 # ============================================================
 # Development Profile

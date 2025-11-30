@@ -8,6 +8,7 @@ import de.nofelix.inventorybackend.domain.port.in.CreateProductUseCase.CreatePro
 import de.nofelix.inventorybackend.domain.port.in.UpdateProductUseCase.UpdateProductCommand;
 import de.nofelix.inventorybackend.domain.port.out.ProductRepositoryPort;
 import de.nofelix.inventorybackend.domain.port.out.StockMovementRepositoryPort;
+import de.nofelix.inventorybackend.infrastructure.cache.ProductCache;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -24,7 +25,6 @@ import reactor.test.StepVerifier;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -47,6 +47,9 @@ class ProductServiceTest {
 
     @Mock
     private StockMovementRepositoryPort stockMovementRepository;
+
+    @Mock
+    private ProductCache productCache;
 
     @InjectMocks
     private ProductService productService;
@@ -75,10 +78,10 @@ class ProductServiceTest {
     class GetProductByIdTests {
 
         @Test
-        @DisplayName("should return product when found")
-        void getProductById_withExistingId_returnsProduct() {
+        @DisplayName("should return product from cache when cached")
+        void getProductById_withCachedProduct_returnsCachedProduct() {
             // given
-            when(productRepository.findById(1L)).thenReturn(Mono.just(sampleProduct));
+            when(productCache.getProduct(1L)).thenReturn(Mono.just(sampleProduct));
 
             // when/then
             StepVerifier.create(productService.getProductById(1L))
@@ -89,13 +92,37 @@ class ProductServiceTest {
                     })
                     .verifyComplete();
 
+            verify(productCache).getProduct(1L);
+            verify(productRepository, never()).findById(anyLong());
+        }
+
+        @Test
+        @DisplayName("should return product from repository and cache it when not cached")
+        void getProductById_withUncachedProduct_returnsAndCaches() {
+            // given
+            when(productCache.getProduct(1L)).thenReturn(Mono.empty());
+            when(productRepository.findById(1L)).thenReturn(Mono.just(sampleProduct));
+            when(productCache.cacheProduct(any(Product.class))).thenReturn(Mono.just(true));
+
+            // when/then
+            StepVerifier.create(productService.getProductById(1L))
+                    .assertNext(product -> {
+                        assertThat(product.getId()).isEqualTo(1L);
+                        assertThat(product.getSku()).isEqualTo("SKU-001");
+                        assertThat(product.getName()).isEqualTo("Test Product");
+                    })
+                    .verifyComplete();
+
+            verify(productCache).getProduct(1L);
             verify(productRepository).findById(1L);
+            verify(productCache).cacheProduct(any(Product.class));
         }
 
         @Test
         @DisplayName("should throw ProductNotFoundException when not found")
         void getProductById_withNonExistingId_throwsProductNotFoundException() {
             // given
+            when(productCache.getProduct(999L)).thenReturn(Mono.empty());
             when(productRepository.findById(999L)).thenReturn(Mono.empty());
 
             // when/then
@@ -147,29 +174,45 @@ class ProductServiceTest {
     class ListProductsTests {
 
         @Test
-        @DisplayName("should return paginated products")
-        void listProducts_withPagination_returnsProductsFlux() {
+        @DisplayName("should return paginated products with metadata")
+        void listProducts_withPagination_returnsPage() {
             // given
             Product product1 = Product.builder().id(1L).sku("SKU-001").name("Product 1").build();
             Product product2 = Product.builder().id(2L).sku("SKU-002").name("Product 2").build();
             
+            when(productRepository.count()).thenReturn(Mono.just(2L));
             when(productRepository.findAll(0, 10)).thenReturn(Flux.just(product1, product2));
 
             // when/then
             StepVerifier.create(productService.listProducts(0, 10))
-                    .assertNext(product -> assertThat(product.getSku()).isEqualTo("SKU-001"))
-                    .assertNext(product -> assertThat(product.getSku()).isEqualTo("SKU-002"))
+                    .assertNext(page -> {
+                        assertThat(page.getContent()).hasSize(2);
+                        assertThat(page.getContent().get(0).getSku()).isEqualTo("SKU-001");
+                        assertThat(page.getContent().get(1).getSku()).isEqualTo("SKU-002");
+                        assertThat(page.getTotalElements()).isEqualTo(2);
+                        assertThat(page.getTotalPages()).isEqualTo(1);
+                        assertThat(page.getPage()).isEqualTo(0);
+                        assertThat(page.getSize()).isEqualTo(10);
+                        assertThat(page.isHasNext()).isFalse();
+                        assertThat(page.isHasPrevious()).isFalse();
+                    })
                     .verifyComplete();
         }
 
         @Test
-        @DisplayName("should return empty flux when no products exist")
-        void listProducts_withNoProducts_returnsEmptyFlux() {
+        @DisplayName("should return empty page when no products exist")
+        void listProducts_withNoProducts_returnsEmptyPage() {
             // given
+            when(productRepository.count()).thenReturn(Mono.just(0L));
             when(productRepository.findAll(0, 10)).thenReturn(Flux.empty());
 
             // when/then
             StepVerifier.create(productService.listProducts(0, 10))
+                    .assertNext(page -> {
+                        assertThat(page.getContent()).isEmpty();
+                        assertThat(page.getTotalElements()).isEqualTo(0);
+                        assertThat(page.getTotalPages()).isEqualTo(0);
+                    })
                     .verifyComplete();
         }
     }
@@ -267,6 +310,7 @@ class ProductServiceTest {
                     Mono.just(invocation.getArgument(0)));
             when(stockMovementRepository.save(any(StockMovement.class))).thenAnswer(invocation ->
                     Mono.just(invocation.getArgument(0)));
+            when(productCache.evictProduct(anyLong())).thenReturn(Mono.just(true));
 
             // when/then
             StepVerifier.create(productService.updateProduct(1L, command))
@@ -277,6 +321,8 @@ class ProductServiceTest {
                         assertThat(product.getUnitPrice()).isEqualByComparingTo(new BigDecimal("39.99"));
                     })
                     .verifyComplete();
+            
+            verify(productCache).evictProduct(1L);
         }
 
         @Test
@@ -344,6 +390,7 @@ class ProductServiceTest {
                     Mono.just(invocation.getArgument(0)));
             when(stockMovementRepository.save(any(StockMovement.class))).thenAnswer(invocation ->
                     Mono.just(invocation.getArgument(0)));
+            when(productCache.evictProduct(anyLong())).thenReturn(Mono.just(true));
 
             // when/then
             StepVerifier.create(productService.updateProduct(1L, command))
@@ -367,12 +414,14 @@ class ProductServiceTest {
         void deleteProduct_withExistingId_deletesProduct() {
             // given
             when(productRepository.existsById(1L)).thenReturn(Mono.just(true));
+            when(productCache.evictProduct(1L)).thenReturn(Mono.just(true));
             when(productRepository.deleteById(1L)).thenReturn(Mono.empty());
 
             // when/then
             StepVerifier.create(productService.deleteProduct(1L))
                     .verifyComplete();
 
+            verify(productCache).evictProduct(1L);
             verify(productRepository).deleteById(1L);
         }
 
